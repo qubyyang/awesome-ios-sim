@@ -64,6 +64,21 @@ public enum JSONValue: Codable, Equatable, Sendable {
         guard case let .bool(value) = self else { return nil }
         return value
     }
+
+    var isScalar: Bool {
+        switch self {
+        case .bool, .integer, .number, .string: true
+        case .null, .array, .object: false
+        }
+    }
+
+    var isDefaultsCompatible: Bool {
+        switch self {
+        case .null, .bool, .integer, .number, .string: true
+        case let .array(values): values.allSatisfy(\.isScalar)
+        case .object: false
+        }
+    }
 }
 
 extension JSONValue: CustomStringConvertible {
@@ -80,4 +95,3 @@ extension JSONValue: CustomStringConvertible {
         }
     }
 }
-

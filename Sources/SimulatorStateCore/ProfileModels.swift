@@ -151,10 +151,29 @@ public struct SimulatorStateProfile: Codable, Equatable, Sendable {
         guard Set(appIDs).count == appIDs.count else {
             throw StateCoreError.invalidProfile("application bundle identifiers must be unique")
         }
+        guard !spec.applications.contains(where: { $0.presence == .absent && $0.sourcePath != nil }) else {
+            throw StateCoreError.invalidProfile("absent applications must not include sourcePath")
+        }
 
         let preferenceIDs = spec.preferences.map(\.identifier)
         guard Set(preferenceIDs).count == preferenceIDs.count else {
             throw StateCoreError.invalidProfile("preference domain/key pairs must be unique")
+        }
+        guard spec.preferences.allSatisfy({ $0.value.isDefaultsCompatible }) else {
+            throw StateCoreError.invalidProfile(
+                "preference values must be null, a scalar, or an array of scalars"
+            )
+        }
+
+        if let statusBar = spec.statusBar {
+            guard statusBar.keys.allSatisfy({
+                $0.range(of: "^[A-Za-z0-9-]+$", options: .regularExpression) != nil
+            }) else {
+                throw StateCoreError.invalidProfile("status bar keys must contain only letters, digits, or hyphens")
+            }
+            guard statusBar.values.allSatisfy(\.isScalar) else {
+                throw StateCoreError.invalidProfile("status bar values must be scalars")
+            }
         }
     }
 }

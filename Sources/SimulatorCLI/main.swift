@@ -60,7 +60,7 @@ awesome-ios-sim — Simulator State as Code
 USAGE
   ios-sim-state inventory
   ios-sim-state snapshot --device <UDID>
-  ios-sim-state diff --profile <profile.json> --snapshot <snapshot.json>
+  ios-sim-state diff --profile <profile.json> [--snapshot <snapshot.json> | --device <UDID>]
   ios-sim-state plan --profile <profile.json> [--snapshot <snapshot.json> | --device <UDID>]
   ios-sim-state apply --plan <plan.json> [--confirm] [--journal <report.json>]
 
@@ -204,4 +204,3 @@ do {
     FileHandle.standardError.write(Data("error: \(error.localizedDescription)\n".utf8))
     exit(1)
 }
-

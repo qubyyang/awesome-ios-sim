@@ -36,6 +36,24 @@ private let device = SimulatorDevice(
     }
 }
 
+@Test func valuesUnsupportedByDefaultsAndStatusBarAreRejected() {
+    let invalidPreference = SimulatorStateProfile(
+        metadata: .init(name: "invalid-preference"),
+        target: .init(udid: device.udid),
+        spec: .init(preferences: [
+            .init(domain: "x", key: "y", value: .object(["nested": .bool(true)])),
+        ])
+    )
+    #expect(throws: StateCoreError.self) { try invalidPreference.validate() }
+
+    let invalidStatusBar = SimulatorStateProfile(
+        metadata: .init(name: "invalid-status"),
+        target: .init(udid: device.udid),
+        spec: .init(statusBar: ["bad_key": .array([.string("x")])])
+    )
+    #expect(throws: StateCoreError.self) { try invalidStatusBar.validate() }
+}
+
 @Test func profileDecoderAppliesSafeDefaults() throws {
     let json = #"""
     {
