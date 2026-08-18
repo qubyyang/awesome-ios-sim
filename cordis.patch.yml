@@ -1,0 +1,30 @@
+# DeepSeek Harness bundle layer for awesome-ios-sim.
+#
+# The first row locates either an explicitly configured MCP executable, a
+# package-local Swift build, or the package sources. The second row delegates
+# MCP lifecycle and tool registration to DSH's built-in generic MCP client.
+- insert:
+    - id: awesome-ios-sim-runtime
+      name: '@qubyyang/awesome-ios-sim/dsh-plugin'
+      config:
+        executablePath: !!js process.env.AWESOME_IOS_SIM_MCP_EXECUTABLE || ''
+        swiftCommand: !!js process.env.AWESOME_IOS_SIM_SWIFT || 'swift'
+        packagePath: ''
+        buildConfiguration: release
+        preferPrebuilt: true
+        serverName: ios_sim
+        toolCallTimeoutMs: 60000
+
+    - id: awesome-ios-sim-mcp
+      name: '@deepseek-ai/dsh-mcp-client'
+      inject: [awesomeIOSSimRuntime]
+      config:
+        serverName: !!js ctx.awesomeIOSSimRuntime.serverName
+        transport: stdio
+        command: !!js ctx.awesomeIOSSimRuntime.command
+        args: !!js ctx.awesomeIOSSimRuntime.args
+        env: {}
+        cwd: !!js ctx.awesomeIOSSimRuntime.cwd
+        toolCallTimeoutMs: !!js ctx.awesomeIOSSimRuntime.toolCallTimeoutMs
+        failOnStartupError: true
+

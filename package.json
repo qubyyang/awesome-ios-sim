@@ -1,0 +1,64 @@
+{
+  "name": "@qubyyang/awesome-ios-sim",
+  "version": "0.1.0-dev",
+  "description": "Simulator State as Code for iOS developers, CI pipelines, MCP clients, and DeepSeek Harness",
+  "type": "module",
+  "exports": {
+    "./dsh-plugin": "./dsh-plugin/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "Package.swift",
+    "Sources",
+    "dsh-plugin/index.js",
+    "cordis.patch.yml",
+    "schemas",
+    "Examples",
+    "docs",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test dsh-plugin/tests/*.test.js",
+    "pack:check": "npm pack --dry-run"
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "os": [
+    "darwin"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/schemastery": "^3.18.1"
+  },
+  "devDependencies": {
+    "@deepseek-ai/schemastery": "3.18.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qubyyang/awesome-ios-sim.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qubyyang/awesome-ios-sim/issues"
+  },
+  "homepage": "https://github.com/qubyyang/awesome-ios-sim#readme",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "ios-simulator",
+    "mcp",
+    "simulator-state-as-code",
+    "swift"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}

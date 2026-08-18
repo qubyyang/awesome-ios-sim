@@ -6,4 +6,5 @@ xcuserdata/
 DerivedData/
 *.xcuserstate
 .env
-
+node_modules/
+*.tgz
