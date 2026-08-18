@@ -3,11 +3,11 @@
 ## State as Code
 
 - [ ] R1: Capture simulator inventory as stable JSON.
-- [ ] R2: Define versioned YAML/JSON-compatible desired-state profiles.
-- [ ] R3: Diff current and desired state without mutation.
-- [ ] R4: Produce a deterministic, reviewable operation plan.
+- [x] R2: Define versioned YAML/JSON-compatible desired-state profiles.
+- [x] R3: Diff current and desired state without mutation.
+- [x] R4: Produce a deterministic, reviewable operation plan.
 - [ ] R5: Apply a plan only after explicit confirmation.
-- [ ] R6: Record capability and best-effort metadata per state field.
+- [x] R6: Record capability and best-effort metadata per state field.
 
 ## Simulator control
 
@@ -27,4 +27,3 @@
 - [ ] R14: Build and test on supported macOS runners.
 - [ ] R15: Provide English and Simplified Chinese README files.
 - [ ] R16: Publish contribution, security, governance, and release guidance.
-
