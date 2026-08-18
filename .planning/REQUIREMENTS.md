@@ -18,9 +18,9 @@
 
 ## Agent interface
 
-- [ ] R11: Expose discovery and operations through MCP stdio.
-- [ ] R12: Support current stateless MCP requests and legacy handshake clients.
-- [ ] R13: Return structured results with JSON Schema-defined inputs/outputs.
+- [x] R11: Expose discovery and operations through MCP stdio.
+- [x] R12: Support current stateless MCP requests and legacy handshake clients.
+- [x] R13: Return structured results with JSON Schema-defined inputs/outputs.
 
 ## Quality and open source
 
