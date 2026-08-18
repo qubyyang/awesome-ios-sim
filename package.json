@@ -35,11 +35,8 @@
   "os": [
     "darwin"
   ],
-  "peerDependencies": {
+  "dependencies": {
     "@deepseek-ai/schemastery": "^3.18.1"
-  },
-  "devDependencies": {
-    "@deepseek-ai/schemastery": "3.18.1"
   },
   "repository": {
     "type": "git",

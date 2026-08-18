@@ -1,6 +1,6 @@
 # awesome-ios-sim
 
-[简体中文](README.zh-CN.md) · [MCP guide](docs/MCP.md) · [Architecture](docs/ARCHITECTURE.md)
+[简体中文](README.zh-CN.md) · [MCP guide](docs/MCP.md) · [DeepSeek Harness](docs/DEEPSEEK_HARNESS.md) · [Architecture](docs/ARCHITECTURE.md)
 
 [![CI](https://github.com/qubyyang/awesome-ios-sim/actions/workflows/ci.yml/badge.svg)](https://github.com/qubyyang/awesome-ios-sim/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -10,6 +10,7 @@ Simulator State as Code for iOS developers, CI pipelines, and AI agents.
 
 `awesome-ios-sim` turns an iOS Simulator setup into a versioned profile that can be captured, diffed,
 planned, reviewed, and safely applied. It provides both a deterministic CLI and an MCP stdio server.
+It is also installable as a `dsh-plugin` bundle for DeepSeek Harness.
 
 > **Project status: alpha.** The state schema is `v1alpha1`. Review generated plans before applying
 > them, especially plans containing `erase` or app removal operations.
@@ -199,6 +200,23 @@ The stdio server implements the MCP `2026-07-28` stateless request model, includ
 It also accepts the legacy initialize handshake used by `2025-11-25`, `2025-06-18`, and `2024-11-05`
 tool clients. See the [MCP guide](docs/MCP.md) for wire examples and the exact supported subset.
 
+## DeepSeek Harness plugin
+
+Install the repository as a DSH bundle and start the Web profile:
+
+```bash
+dsh plugin --profile web add github:qubyyang/awesome-ios-sim
+dsh web
+```
+
+Harness bridges the existing MCP server and exposes namespaced tools such as
+`mcp__ios_sim__simulator_inventory` and `mcp__ios_sim__simulator_plan`. The adapter is currently tested
+against `@deepseek-ai/dsh` `0.1.0-rc.7`. Pin a tag or commit in reproducible environments because Harness
+is still in developer preview.
+
+See the [DeepSeek Harness guide](docs/DEEPSEEK_HARNESS.md) for configuration, development, tool names,
+uninstall steps, and the host-process security boundary.
+
 ## State coverage
 
 | State | Read | Write | Support |
@@ -240,6 +258,9 @@ process boundary separate so a specialized helper can be introduced later if pro
 ```bash
 swift build
 swift test
+npm ci
+npm test
+npm run pack:check
 swift run ios-sim-state plan \
   --profile Examples/ui-tests.profile.json \
   --snapshot Examples/ui-tests.snapshot.json
@@ -259,4 +280,3 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the
 ## License
 
 MIT. See [LICENSE](LICENSE).
-

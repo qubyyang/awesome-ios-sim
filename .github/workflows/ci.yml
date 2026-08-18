@@ -25,6 +25,21 @@ jobs:
       - name: Show toolchain
         run: swift --version
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install DSH plugin dependencies
+        run: npm ci
+
+      - name: Test DSH plugin adapter
+        run: npm test
+
+      - name: Validate DSH bundle package
+        run: npm run pack:check
+
       - name: Build release products
         run: swift build -c release
 
@@ -43,4 +58,3 @@ jobs:
           printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientInfo":{"name":"ci","version":"1"},"io.modelcontextprotocol/clientCapabilities":{}}}}' \
             | swift run ios-sim-state-mcp \
             | grep '"supportedVersions"'
-

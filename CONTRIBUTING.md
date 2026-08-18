@@ -16,6 +16,9 @@ For substantial schema or safety-model changes, open an issue before implementat
 ```bash
 swift build
 swift test
+npm ci
+npm test
+npm run pack:check
 swift run ios-sim-state plan \
   --profile Examples/ui-tests.profile.json \
   --snapshot Examples/ui-tests.snapshot.json
@@ -23,6 +26,10 @@ swift run ios-sim-state plan \
 
 Add fixture-based tests for state engine and parser changes. Tests must not require a locally installed
 simulator unless they are explicitly marked as integration tests.
+
+Changes to `package.json`, `cordis.patch.yml`, or `dsh-plugin/` must remain compatible with the baseline
+documented in `docs/DEEPSEEK_HARNESS.md`. Keep DSH integration as an adapter over the existing MCP server;
+do not add a second simulator state engine or bypass the MCP apply confirmation gate.
 
 ## Commit and pull request guidance
 
@@ -34,4 +41,3 @@ simulator unless they are explicitly marked as integration tests.
   containing user paths.
 
 By participating, you agree to follow [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
-

@@ -24,7 +24,8 @@ available.
 - App `sourcePath` values are passed to `simctl install`; review them before confirmation.
 - Plans and MCP tool arguments are untrusted input and should not be auto-confirmed.
 - The project does not invoke a shell or load private CoreSimulator frameworks.
+- The DSH bundle starts the configured MCP command as trusted host code outside the agent workspace sandbox;
+  install only trusted revisions and pin a tag or commit in managed environments.
 
 Reports about expected, explicitly confirmed simulator changes without a boundary bypass are not security
 vulnerabilities, though reliability bugs are welcome in the public issue tracker.
-

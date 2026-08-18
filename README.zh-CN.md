@@ -1,6 +1,6 @@
 # awesome-ios-sim
 
-[English](README.md) · [MCP 接入指南](docs/MCP.md) · [架构说明](docs/ARCHITECTURE.md)
+[English](README.md) · [MCP 接入指南](docs/MCP.md) · [DeepSeek Harness](docs/DEEPSEEK_HARNESS.zh-CN.md) · [架构说明](docs/ARCHITECTURE.md)
 
 [![CI](https://github.com/qubyyang/awesome-ios-sim/actions/workflows/ci.yml/badge.svg)](https://github.com/qubyyang/awesome-ios-sim/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -10,6 +10,7 @@
 
 `awesome-ios-sim` 把 iOS 模拟器环境表达成可版本管理的 profile，并支持 snapshot、diff、plan、
 人工审查和安全 apply。项目同时提供确定性的 CLI 与 MCP stdio Server。
+本仓库也可以作为 `dsh-plugin` Bundle 安装到 DeepSeek Harness。
 
 > **项目状态：Alpha。** 当前状态协议为 `v1alpha1`。执行前请审查生成的 plan，尤其是包含
 > `erase` 或卸载应用的操作。
@@ -196,6 +197,22 @@ stdio Server 支持 MCP `2026-07-28` 无状态请求模型，包括 `server/disc
 可缓存工具列表、`resultType` 和 JSON Schema 2020-12。同时兼容 `2025-11-25`、`2025-06-18`
 和 `2024-11-05` 工具客户端的旧初始化握手。精确支持范围和线级示例见 [MCP 指南](docs/MCP.md)。
 
+## DeepSeek Harness 插件
+
+把本仓库作为 DSH Bundle 安装，并启动 Web Profile：
+
+```bash
+dsh plugin --profile web add github:qubyyang/awesome-ios-sim
+dsh web
+```
+
+Harness 会桥接现有 MCP Server，并公开 `mcp__ios_sim__simulator_inventory`、
+`mcp__ios_sim__simulator_plan` 等带 Namespace 的工具。当前兼容基线为 `@deepseek-ai/dsh`
+`0.1.0-rc.7`。由于 Harness 仍处于 Developer Preview，可复现环境应固定 Tag 或 Commit。
+
+完整配置、开发流程、工具名、卸载方式和宿主进程安全边界见
+[DeepSeek Harness 指南](docs/DEEPSEEK_HARNESS.zh-CN.md)。
+
 ## 状态覆盖范围
 
 | 状态 | 读取 | 写入 | 支持级别 |
@@ -235,6 +252,9 @@ macOS 工具，提供强类型 `Codable` 模型，并与 iOS 工具链保持一�
 ```bash
 swift build
 swift test
+npm ci
+npm test
+npm run pack:check
 swift run ios-sim-state plan \
   --profile Examples/ui-tests.profile.json \
   --snapshot Examples/ui-tests.snapshot.json
@@ -254,4 +274,3 @@ swift run ios-sim-state plan \
 ## 许可证
 
 MIT，见 [LICENSE](LICENSE)。
-

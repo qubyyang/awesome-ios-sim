@@ -12,5 +12,5 @@ initial alpha tag.
 - Capability-aware diff and deterministic operation planning.
 - Safe `simctl` driver and JSON CLI with dry-run-by-default apply.
 - MCP stdio server for current stateless and legacy handshake tool clients.
+- Installable DeepSeek Harness bundle backed by the existing MCP server.
 - English and Simplified Chinese documentation, schema, examples, and CI.
-
