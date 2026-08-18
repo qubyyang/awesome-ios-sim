@@ -1,0 +1,35 @@
+name: Feature request
+description: Propose a state capability or workflow improvement
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What simulator workflow cannot be expressed today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Include expected profile, CLI, and MCP behavior where relevant.
+    validations:
+      required: true
+  - type: dropdown
+    id: readback
+    attributes:
+      label: Expected state support
+      options:
+        - Exact read and write
+        - Best-effort read or write
+        - Unknown
+    validations:
+      required: true
+  - type: textarea
+    id: public_api
+    attributes:
+      label: Public Apple API or simctl evidence
+      description: Private CoreSimulator frameworks are out of scope.
+

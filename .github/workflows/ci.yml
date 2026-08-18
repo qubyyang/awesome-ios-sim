@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Swift build and test
+    runs-on: macos-15
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: swift --version
+
+      - name: Build release products
+        run: swift build -c release
+
+      - name: Run tests
+        run: swift test --parallel
+
+      - name: Validate offline example
+        run: >-
+          swift run ios-sim-state plan
+          --profile Examples/ui-tests.profile.json
+          --snapshot Examples/ui-tests.snapshot.json
+          --compact
+
+      - name: Smoke test MCP discovery
+        run: |
+          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientInfo":{"name":"ci","version":"1"},"io.modelcontextprotocol/clientCapabilities":{}}}}' \
+            | swift run ios-sim-state-mcp \
+            | grep '"supportedVersions"'
+

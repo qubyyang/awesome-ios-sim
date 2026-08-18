@@ -24,6 +24,6 @@
 
 ## Quality and open source
 
-- [ ] R14: Build and test on supported macOS runners.
-- [ ] R15: Provide English and Simplified Chinese README files.
-- [ ] R16: Publish contribution, security, governance, and release guidance.
+- [x] R14: Build and test on supported macOS runners.
+- [x] R15: Provide English and Simplified Chinese README files.
+- [x] R16: Publish contribution, security, governance, and release guidance.

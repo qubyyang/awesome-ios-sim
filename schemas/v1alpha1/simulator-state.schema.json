@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/qubyyang/awesome-ios-sim/main/schemas/v1alpha1/simulator-state.schema.json",
+  "title": "awesome-ios-sim Simulator State",
+  "description": "A declarative iOS Simulator state profile.",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "target", "spec"],
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": {
+      "const": "awesome-ios-sim/v1alpha1"
+    },
+    "kind": {
+      "const": "SimulatorState"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "udid": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "runtime": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "anyOf": [
+        { "required": ["udid"] },
+        { "required": ["name"] },
+        { "required": ["runtime"] }
+      ]
+    },
+    "spec": {
+      "$ref": "#/$defs/spec"
+    }
+  },
+  "$defs": {
+    "defaultsValue": {
+      "anyOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "integer" },
+        { "type": "number" },
+        { "type": "string" },
+        {
+          "type": "array",
+          "items": {
+            "type": ["boolean", "integer", "number", "string"]
+          }
+        }
+      ]
+    },
+    "preference": {
+      "type": "object",
+      "required": ["domain", "key", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "$ref": "#/$defs/defaultsValue"
+        }
+      }
+    },
+    "application": {
+      "type": "object",
+      "required": ["bundleIdentifier"],
+      "additionalProperties": false,
+      "properties": {
+        "bundleIdentifier": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourcePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "presence": {
+          "enum": ["present", "absent"],
+          "default": "present"
+        },
+        "running": {
+          "type": "boolean"
+        },
+        "launchArguments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "presence": { "const": "absent" }
+            },
+            "required": ["presence"]
+          },
+          "then": {
+            "not": {
+              "required": ["sourcePath"]
+            }
+          }
+        }
+      ]
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "power": {
+          "enum": ["booted", "shutdown", "unchanged"],
+          "default": "unchanged"
+        },
+        "eraseBeforeApply": {
+          "type": "boolean",
+          "default": false
+        },
+        "applications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/application"
+          },
+          "default": []
+        },
+        "preferences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/preference"
+          },
+          "default": []
+        },
+        "statusBar": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z0-9-]+$"
+          },
+          "additionalProperties": {
+            "type": ["boolean", "integer", "number", "string"]
+          }
+        }
+      }
+    }
+  }
+}
