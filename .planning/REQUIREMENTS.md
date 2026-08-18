@@ -2,19 +2,19 @@
 
 ## State as Code
 
-- [ ] R1: Capture simulator inventory as stable JSON.
+- [x] R1: Capture simulator inventory as stable JSON.
 - [x] R2: Define versioned YAML/JSON-compatible desired-state profiles.
 - [x] R3: Diff current and desired state without mutation.
 - [x] R4: Produce a deterministic, reviewable operation plan.
-- [ ] R5: Apply a plan only after explicit confirmation.
+- [x] R5: Apply a plan only after explicit confirmation.
 - [x] R6: Record capability and best-effort metadata per state field.
 
 ## Simulator control
 
-- [ ] R7: Boot and shut down a selected simulator.
-- [ ] R8: Install/uninstall/launch/terminate an app.
-- [ ] R9: Set supported preferences and status-bar overrides.
-- [ ] R10: Erase a simulator behind a destructive confirmation gate.
+- [x] R7: Boot and shut down a selected simulator.
+- [x] R8: Install/uninstall/launch/terminate an app.
+- [x] R9: Set supported preferences and status-bar overrides.
+- [x] R10: Erase a simulator behind a destructive confirmation gate.
 
 ## Agent interface
 

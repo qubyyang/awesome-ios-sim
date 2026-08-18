@@ -36,6 +36,26 @@ private let device = SimulatorDevice(
     }
 }
 
+@Test func profileDecoderAppliesSafeDefaults() throws {
+    let json = #"""
+    {
+      "apiVersion": "awesome-ios-sim/v1alpha1",
+      "kind": "SimulatorState",
+      "metadata": { "name": "minimal" },
+      "target": { "udid": "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE" },
+      "spec": {
+        "applications": [{ "bundleIdentifier": "com.example.app" }]
+      }
+    }
+    """#
+
+    let profile = try StateCodec.decodeProfile(from: Data(json.utf8))
+    #expect(profile.spec.power == .unchanged)
+    #expect(!profile.spec.eraseBeforeApply)
+    #expect(profile.spec.applications[0].presence == .present)
+    #expect(profile.spec.applications[0].launchArguments.isEmpty)
+}
+
 @Test func plannerProducesDeterministicSafeOrder() throws {
     let current = SimulatorSnapshot(
         generatedAt: "2026-08-18T00:00:00Z",

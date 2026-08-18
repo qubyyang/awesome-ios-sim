@@ -1,0 +1,41 @@
+{
+  "apiVersion": "awesome-ios-sim/snapshot-v1alpha1",
+  "capabilities": {
+    "applications": {
+      "readable": true,
+      "support": "bestEffort",
+      "writable": true
+    },
+    "power": {
+      "readable": true,
+      "support": "exact",
+      "writable": true
+    },
+    "preferences": {
+      "note": "Only explicitly managed preference keys can be compared reliably.",
+      "readable": false,
+      "support": "bestEffort",
+      "writable": true
+    },
+    "statusBar": {
+      "note": "simctl supports overrides but does not expose a complete readback API.",
+      "readable": false,
+      "support": "bestEffort",
+      "writable": true
+    }
+  },
+  "device": {
+    "isAvailable": true,
+    "name": "iPhone 17 Pro",
+    "runtimeIdentifier": "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+    "state": "Shutdown",
+    "udid": "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE"
+  },
+  "generatedAt": "2026-08-18T00:00:00Z",
+  "state": {
+    "applications": [],
+    "power": "shutdown",
+    "preferences": []
+  }
+}
+

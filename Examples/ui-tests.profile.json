@@ -1,0 +1,39 @@
+{
+  "apiVersion": "awesome-ios-sim/v1alpha1",
+  "kind": "SimulatorState",
+  "metadata": {
+    "description": "A deterministic simulator fixture for UI tests",
+    "name": "ui-tests"
+  },
+  "target": {
+    "name": "iPhone 17 Pro",
+    "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-27-0"
+  },
+  "spec": {
+    "applications": [
+      {
+        "bundleIdentifier": "com.example.app",
+        "launchArguments": [
+          "--uitesting"
+        ],
+        "presence": "present",
+        "running": true,
+        "sourcePath": "/absolute/path/to/Example.app"
+      }
+    ],
+    "eraseBeforeApply": false,
+    "power": "shutdown",
+    "preferences": [
+      {
+        "domain": "com.example.app",
+        "key": "hasSeenOnboarding",
+        "value": false
+      }
+    ],
+    "statusBar": {
+      "batteryLevel": 100,
+      "time": "09:41"
+    }
+  }
+}
+

@@ -54,6 +54,23 @@ public struct ApplicationSpec: Codable, Equatable, Sendable {
         self.running = running
         self.launchArguments = launchArguments
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case bundleIdentifier
+        case sourcePath
+        case presence
+        case running
+        case launchArguments
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        bundleIdentifier = try container.decode(String.self, forKey: .bundleIdentifier)
+        sourcePath = try container.decodeIfPresent(String.self, forKey: .sourcePath)
+        presence = try container.decodeIfPresent(ApplicationPresence.self, forKey: .presence) ?? .present
+        running = try container.decodeIfPresent(Bool.self, forKey: .running)
+        launchArguments = try container.decodeIfPresent([String].self, forKey: .launchArguments) ?? []
+    }
 }
 
 public struct DesiredSimulatorState: Codable, Equatable, Sendable {
@@ -75,6 +92,23 @@ public struct DesiredSimulatorState: Codable, Equatable, Sendable {
         self.applications = applications
         self.preferences = preferences
         self.statusBar = statusBar
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case power
+        case eraseBeforeApply
+        case applications
+        case preferences
+        case statusBar
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        power = try container.decodeIfPresent(SimulatorPowerState.self, forKey: .power) ?? .unchanged
+        eraseBeforeApply = try container.decodeIfPresent(Bool.self, forKey: .eraseBeforeApply) ?? false
+        applications = try container.decodeIfPresent([ApplicationSpec].self, forKey: .applications) ?? []
+        preferences = try container.decodeIfPresent([PreferenceValue].self, forKey: .preferences) ?? []
+        statusBar = try container.decodeIfPresent([String: JSONValue].self, forKey: .statusBar)
     }
 }
 
@@ -138,4 +172,3 @@ public enum StateCoreError: Error, Equatable, LocalizedError, Sendable {
         }
     }
 }
-
