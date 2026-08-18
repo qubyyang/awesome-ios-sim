@@ -133,6 +133,40 @@ private let device = SimulatorDevice(
     #expect(plan.maximumRisk == .destructive)
 }
 
+@Test func eraseShutsDownFirstAndRestoresUnchangedPower() throws {
+    let bootedDevice = SimulatorDevice(
+        udid: device.udid,
+        name: device.name,
+        state: .booted,
+        runtimeIdentifier: device.runtimeIdentifier
+    )
+    let current = SimulatorSnapshot(device: bootedDevice, state: .init(power: .booted))
+    let profile = SimulatorStateProfile(
+        metadata: .init(name: "clean-and-restore"),
+        target: .init(udid: device.udid),
+        spec: .init(power: .unchanged, eraseBeforeApply: true)
+    )
+
+    let plan = try StatePlanner().makePlan(profile: profile, current: current)
+    #expect(plan.operations.map(\.action) == [.shutdown, .erase, .boot])
+    #expect(!plan.diff.contains { $0.path == "spec.power" })
+}
+
+@Test func transientBootRestoresOriginalShutdownForUnchangedPower() throws {
+    let current = SimulatorSnapshot(device: device, state: .init(power: .shutdown))
+    let profile = SimulatorStateProfile(
+        metadata: .init(name: "temporary-boot"),
+        target: .init(udid: device.udid),
+        spec: .init(
+            power: .unchanged,
+            preferences: [.init(domain: "x", key: "y", value: .integer(1))]
+        )
+    )
+
+    let plan = try StatePlanner().makePlan(profile: profile, current: current)
+    #expect(plan.operations.map(\.action) == [.boot, .setPreference, .shutdown])
+}
+
 @Test func unsupportedCapabilitiesAreReportedNotApplied() throws {
     let current = SimulatorSnapshot(
         device: device,

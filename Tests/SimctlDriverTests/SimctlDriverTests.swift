@@ -72,9 +72,28 @@ private let appsFixture = #"""
     )
 
     let receipt = try client.execute(operation)
-    #expect(receipt.command == [
+    #expect(receipt.commands == [[
         "xcrun", "simctl", "spawn", "DEVICE", "defaults", "write",
         "com.example.app", "greeting", "-string", "hello; rm -rf /",
+    ]])
+}
+
+@Test func bootWaitsUntilSimulatorIsReady() throws {
+    let executor = StubExecutor { arguments in .success(arguments) }
+    let client = SimctlClient(executor: executor)
+    let operation = SimulatorOperation(
+        id: "001-boot",
+        action: .boot,
+        targetUDID: "DEVICE",
+        risk: .reversible,
+        requiresConfirmation: true,
+        reason: "test"
+    )
+
+    let receipt = try client.execute(operation)
+    #expect(receipt.commands == [
+        ["xcrun", "simctl", "boot", "DEVICE"],
+        ["xcrun", "simctl", "bootstatus", "DEVICE", "-b"],
     ])
 }
 
@@ -161,7 +180,7 @@ private final class StubController: SimulatorControlling, @unchecked Sendable {
             operationID: operation.id,
             action: operation.action,
             targetUDID: operation.targetUDID,
-            command: [],
+            commands: [],
             exitCode: code,
             standardOutput: "",
             standardError: code == 0 ? "" : "failed",
@@ -170,4 +189,3 @@ private final class StubController: SimulatorControlling, @unchecked Sendable {
         )
     }
 }
-

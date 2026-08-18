@@ -97,15 +97,19 @@ public struct SimctlClient: SimulatorControlling {
     public func execute(_ operation: SimulatorOperation) throws -> OperationReceipt {
         let arguments = try commandArguments(for: operation)
         let startedAt = StateTimestamp.now()
-        let result = try run(arguments)
+        var results = [try run(arguments)]
+        if operation.action == .boot, results[0].succeeded {
+            results.append(try run(["bootstatus", operation.targetUDID, "-b"]))
+        }
+        let finalResult = results.first(where: { !$0.succeeded }) ?? results[results.count - 1]
         return OperationReceipt(
             operationID: operation.id,
             action: operation.action,
             targetUDID: operation.targetUDID,
-            command: ["xcrun", "simctl"] + arguments,
-            exitCode: result.exitCode,
-            standardOutput: result.standardOutput,
-            standardError: result.standardError,
+            commands: results.map { ["xcrun"] + $0.arguments },
+            exitCode: finalResult.exitCode,
+            standardOutput: results.map(\.standardOutput).filter { !$0.isEmpty }.joined(separator: "\n"),
+            standardError: results.map(\.standardError).filter { !$0.isEmpty }.joined(separator: "\n"),
             startedAt: startedAt,
             finishedAt: StateTimestamp.now()
         )
@@ -201,4 +205,3 @@ public struct SimctlClient: SimulatorControlling {
         )
     }
 }
-

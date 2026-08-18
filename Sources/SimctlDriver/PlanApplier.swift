@@ -5,7 +5,7 @@ public struct OperationReceipt: Codable, Equatable, Sendable {
     public let operationID: String
     public let action: SimulatorOperationAction
     public let targetUDID: String
-    public let command: [String]
+    public let commands: [[String]]
     public let exitCode: Int32
     public let standardOutput: String
     public let standardError: String
@@ -16,7 +16,7 @@ public struct OperationReceipt: Codable, Equatable, Sendable {
         operationID: String,
         action: SimulatorOperationAction,
         targetUDID: String,
-        command: [String],
+        commands: [[String]],
         exitCode: Int32,
         standardOutput: String,
         standardError: String,
@@ -26,7 +26,7 @@ public struct OperationReceipt: Codable, Equatable, Sendable {
         self.operationID = operationID
         self.action = action
         self.targetUDID = targetUDID
-        self.command = command
+        self.commands = commands
         self.exitCode = exitCode
         self.standardOutput = standardOutput
         self.standardError = standardError
@@ -111,4 +111,3 @@ public final class SimulatorPlanApplier: PlanApplying, @unchecked Sendable {
         return PlanExecutionReport(plan: plan, status: .succeeded, receipts: receipts)
     }
 }
-

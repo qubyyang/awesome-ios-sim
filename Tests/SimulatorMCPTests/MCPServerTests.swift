@@ -176,7 +176,7 @@ private final class MCPStubController: SimulatorControlling, @unchecked Sendable
             operationID: operation.id,
             action: operation.action,
             targetUDID: operation.targetUDID,
-            command: [],
+            commands: [],
             exitCode: 0,
             standardOutput: "",
             standardError: "",
@@ -185,4 +185,3 @@ private final class MCPStubController: SimulatorControlling, @unchecked Sendable
         )
     }
 }
-

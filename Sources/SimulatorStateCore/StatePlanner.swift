@@ -22,6 +22,22 @@ public struct StatePlanner: Sendable {
         let hasOnlineChanges = !profile.spec.applications.isEmpty
             || !profile.spec.preferences.isEmpty
             || profile.spec.statusBar != nil
+        let initiallyBooted = current.state.power == .booted
+        let shouldEndBooted: Bool = switch profile.spec.power {
+        case .booted: true
+        case .shutdown: false
+        case .unchanged: initiallyBooted
+        }
+        var projectedBooted = initiallyBooted
+
+        if profile.spec.power != .unchanged, shouldEndBooted != initiallyBooted {
+            diff.append(.init(
+                path: "spec.power",
+                kind: .change,
+                current: .string(current.state.power.rawValue),
+                desired: .string(profile.spec.power.rawValue)
+            ))
+        }
 
         if profile.spec.eraseBeforeApply {
             diff.append(.init(
@@ -31,6 +47,16 @@ public struct StatePlanner: Sendable {
                 desired: .bool(true),
                 note: "Erasing removes all simulator content and settings."
             ))
+            if projectedBooted {
+                drafts.append(.init(
+                    action: .shutdown,
+                    arguments: [:],
+                    risk: .reversible,
+                    requiresConfirmation: true,
+                    reason: "The simulator must be shut down before it can be erased."
+                ))
+                projectedBooted = false
+            }
             drafts.append(.init(
                 action: .erase,
                 arguments: [:],
@@ -40,17 +66,8 @@ public struct StatePlanner: Sendable {
             ))
         }
 
-        let currentlyBooted = current.state.power == .booted
         let needsBoot = profile.spec.power == .booted || hasOnlineChanges
-        if needsBoot && (!currentlyBooted || profile.spec.eraseBeforeApply) {
-            if profile.spec.power == .booted && !currentlyBooted {
-                diff.append(.init(
-                    path: "spec.power",
-                    kind: .change,
-                    current: .string(current.state.power.rawValue),
-                    desired: .string(SimulatorPowerState.booted.rawValue)
-                ))
-            }
+        if needsBoot && !projectedBooted {
             drafts.append(.init(
                 action: .boot,
                 arguments: [:],
@@ -58,27 +75,30 @@ public struct StatePlanner: Sendable {
                 requiresConfirmation: true,
                 reason: "The desired state requires a booted simulator."
             ))
+            projectedBooted = true
         }
 
         planApplications(profile, current, diff: &diff, drafts: &drafts, warnings: &warnings)
         planPreferences(profile, current, diff: &diff, drafts: &drafts, warnings: &warnings)
         planStatusBar(profile, current, diff: &diff, drafts: &drafts, warnings: &warnings)
 
-        if profile.spec.power == .shutdown && (currentlyBooted || hasOnlineChanges || profile.spec.eraseBeforeApply) {
-            if currentlyBooted {
-                diff.append(.init(
-                    path: "spec.power",
-                    kind: .change,
-                    current: .string(current.state.power.rawValue),
-                    desired: .string(SimulatorPowerState.shutdown.rawValue)
-                ))
-            }
+        if !projectedBooted && shouldEndBooted {
+            drafts.append(.init(
+                action: .boot,
+                arguments: [:],
+                risk: .reversible,
+                requiresConfirmation: true,
+                reason: "Restore the simulator's original booted state."
+            ))
+        } else if projectedBooted && !shouldEndBooted {
             drafts.append(.init(
                 action: .shutdown,
                 arguments: [:],
                 risk: .reversible,
                 requiresConfirmation: true,
-                reason: "Profile requires the simulator to finish shut down."
+                reason: profile.spec.power == .unchanged
+                    ? "Restore the simulator's original shutdown state."
+                    : "Profile requires the simulator to finish shut down."
             ))
         }
 
