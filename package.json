@@ -11,6 +11,7 @@
   "files": [
     "Package.swift",
     "Sources",
+    "Scripts",
     "dsh-plugin/index.js",
     "cordis.patch.yml",
     "schemas",

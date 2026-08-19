@@ -13,4 +13,5 @@ initial alpha tag.
 - Safe `simctl` driver and JSON CLI with dry-run-by-default apply.
 - MCP stdio server for current stateless and legacy handshake tool clients.
 - Installable DeepSeek Harness bundle backed by the existing MCP server.
+- Opt-in isolated live integration suite for real Xcode Simulator runtimes.
 - English and Simplified Chinese documentation, schema, examples, and CI.

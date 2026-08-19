@@ -266,6 +266,17 @@ swift run ios-sim-state plan \
   --snapshot Examples/ui-tests.snapshot.json
 ```
 
+Run the opt-in live suite against a real Xcode Simulator runtime:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+  Scripts/live-integration-test.sh
+```
+
+It creates and exclusively targets a uniquely named temporary simulator, verifies the CLI and MCP paths,
+checks dry-run safety and confirmed reconciliation, then deletes that exact device. Existing simulators are
+not selected or modified. The script requires `jq`; artifacts are retained under `.build/live-integration/`.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the
 [architecture notes](docs/ARCHITECTURE.md). Please do not add private CoreSimulator APIs.
 

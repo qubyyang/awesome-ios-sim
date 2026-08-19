@@ -27,6 +27,19 @@ swift run ios-sim-state plan \
 Add fixture-based tests for state engine and parser changes. Tests must not require a locally installed
 simulator unless they are explicitly marked as integration tests.
 
+Run the opt-in live integration suite on a macOS host with a full Xcode installation and an available iOS
+Simulator runtime:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+  Scripts/live-integration-test.sh
+```
+
+The suite creates a uniquely named simulator, targets every destructive operation by its exact generated UDID,
+and deletes that device when it finishes or fails. It never selects or mutates an existing simulator. Set
+`AISS_KEEP_DEVICE=1` only when you intentionally need to retain the dedicated device for debugging. Test
+reports are retained under `.build/live-integration/`.
+
 Changes to `package.json`, `cordis.patch.yml`, or `dsh-plugin/` must remain compatible with the baseline
 documented in `docs/DEEPSEEK_HARNESS.md`. Keep DSH integration as an adapter over the existing MCP server;
 do not add a second simulator state engine or bypass the MCP apply confirmation gate.

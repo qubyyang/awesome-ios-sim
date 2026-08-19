@@ -260,6 +260,17 @@ swift run ios-sim-state plan \
   --snapshot Examples/ui-tests.snapshot.json
 ```
 
+在真实 Xcode Simulator Runtime 上运行 opt-in live 测试：
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+  Scripts/live-integration-test.sh
+```
+
+脚本会创建并只操作一个名称唯一的临时模拟器，验证 CLI 与 MCP 链路、dry-run 安全边界和确认后的
+状态收敛，最后精确删除该设备，不会选择或修改已有模拟器。脚本依赖 `jq`，测试产物保留在
+`.build/live-integration/` 下。
+
 请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)、[SECURITY.md](SECURITY.md) 和
 [架构说明](docs/ARCHITECTURE.md)。项目不接受私有 CoreSimulator API。
 
