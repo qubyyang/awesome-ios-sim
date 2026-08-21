@@ -14,4 +14,11 @@ initial alpha tag.
 - MCP stdio server for current stateless and legacy handshake tool clients.
 - Installable DeepSeek Harness bundle backed by the existing MCP server.
 - Opt-in isolated live integration suite for real Xcode Simulator runtimes.
+- Tag-driven arm64 and x86_64 release archives with checksums and provenance attestations.
 - English and Simplified Chinese documentation, schema, examples, and CI.
+
+### Changed
+
+- Profile decoding now rejects unknown fields, empty identifiers, and invalid public status bar override values
+  instead of silently accepting inputs that differ from the published JSON Schema.
+- CI uses current official GitHub actions and enforces synchronized Swift, npm, and lockfile versions.

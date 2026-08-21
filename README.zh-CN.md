@@ -155,6 +155,8 @@ Profile 是经过 [`schemas/v1alpha1/simulator-state.schema.json`](schemas/v1alp
 
 `power: "unchanged"` 会在临时操作结束后恢复原始电源状态。需要 erase 时，会先关闭已启动设备；
 boot 后会等待 `simctl bootstatus -b` 完成，再执行依赖操作。
+Profile 使用严格解码：未知字段与空标识符会被拒绝。`statusBar` 只接受公开的 `simctl status_bar`
+覆盖项，并会在生成 Plan 前检查枚举值和数值范围。
 
 ## CLI
 
@@ -271,12 +273,22 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 状态收敛，最后精确删除该设备，不会选择或修改已有模拟器。脚本依赖 `jq`，测试产物保留在
 `.build/live-integration/` 下。
 
+在本地构建并检查带版本的原生 Release 压缩包：
+
+```bash
+Scripts/release/verify-version.sh
+Scripts/release/build-artifact.sh
+```
+
+Tag 驱动的 GitHub 自动化会分别构建 arm64 与 x86_64 压缩包，验证 SHA-256 校验和并发布来源证明。
+详见[兼容性契约](docs/COMPATIBILITY.md)和双语[发布流程](docs/RELEASING.md)。未打 Tag 的分支构建不会创建 Release。
+
 请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)、[SECURITY.md](SECURITY.md) 和
 [架构说明](docs/ARCHITECTURE.md)。项目不接受私有 CoreSimulator API。
 
 ## 路线图
 
-- 稳定 Profile Schema 并发布带 Tag 的二进制产物。
+- 通过发布就绪审计后发布首批带 Tag 的二进制产物。
 - 提供 Homebrew 与签名后的 Universal Release。
 - 支持可复用的 Profile Layer 和 Preset。
 - 在不依赖私有框架的前提下扩展能力感知设置。

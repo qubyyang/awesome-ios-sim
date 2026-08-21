@@ -40,6 +40,16 @@ and deletes that device when it finishes or fails. It never selects or mutates a
 `AISS_KEEP_DEVICE=1` only when you intentionally need to retain the dedicated device for debugging. Test
 reports are retained under `.build/live-integration/`.
 
+Before preparing a tag, read [docs/RELEASING.md](docs/RELEASING.md) and run:
+
+```bash
+Scripts/release/verify-version.sh
+Scripts/release/build-artifact.sh
+```
+
+Do not move an existing release tag. Breaking profile changes require a new API version and the migration
+policy documented in [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
+
 Changes to `package.json`, `cordis.patch.yml`, or `dsh-plugin/` must remain compatible with the baseline
 documented in `docs/DEEPSEEK_HARNESS.md`. Keep DSH integration as an adapter over the existing MCP server;
 do not add a second simulator state engine or bypass the MCP apply confirmation gate.

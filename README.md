@@ -157,6 +157,8 @@ Fields with safe defaults may be omitted.
 
 `power: "unchanged"` restores the original power state after temporary work. When an erase is planned,
 a booted device is shut down first. Boot operations wait for `simctl bootstatus -b` before dependent work.
+Profile decoding is strict: unknown fields and empty identifiers are rejected. `statusBar` accepts only the
+public `simctl status_bar` overrides and validates enum values and numeric ranges before planning.
 
 ## CLI
 
@@ -277,12 +279,23 @@ It creates and exclusively targets a uniquely named temporary simulator, verifie
 checks dry-run safety and confirmed reconciliation, then deletes that exact device. Existing simulators are
 not selected or modified. The script requires `jq`; artifacts are retained under `.build/live-integration/`.
 
+Build and inspect a versioned native release archive locally:
+
+```bash
+Scripts/release/verify-version.sh
+Scripts/release/build-artifact.sh
+```
+
+Tag-driven GitHub automation builds separate arm64 and x86_64 archives, verifies SHA-256 checksums, and
+publishes provenance attestations. See the [compatibility contract](docs/COMPATIBILITY.md) and bilingual
+[release process](docs/RELEASING.md). No release is created from an untagged branch build.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the
 [architecture notes](docs/ARCHITECTURE.md). Please do not add private CoreSimulator APIs.
 
 ## Roadmap
 
-- Stabilize the profile schema and publish tagged binaries.
+- Publish the first tagged binaries after the release-readiness audit.
 - Add Homebrew distribution and signed universal artifacts.
 - Add reusable profile layers and presets.
 - Expand capability-aware settings without private frameworks.

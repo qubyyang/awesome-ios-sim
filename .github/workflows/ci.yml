@@ -20,13 +20,13 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Show toolchain
         run: swift --version
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
@@ -39,6 +39,9 @@ jobs:
 
       - name: Validate DSH bundle package
         run: npm run pack:check
+
+      - name: Validate version contract
+        run: Scripts/release/verify-version.sh
 
       - name: Build release products
         run: swift build -c release
