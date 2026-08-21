@@ -2,6 +2,7 @@ import Foundation
 
 public enum StateCodec {
     public static func decodeProfile(from data: Data) throws -> SimulatorStateProfile {
+        try ProfileDocumentValidator.validate(data)
         let profile = try decoder().decode(SimulatorStateProfile.self, from: data)
         try profile.validate()
         return profile
@@ -25,4 +26,3 @@ public enum StateCodec {
         JSONDecoder()
     }
 }
-

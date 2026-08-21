@@ -39,6 +39,9 @@
   "dependencies": {
     "@deepseek-ai/schemastery": "^3.18.1"
   },
+  "devDependencies": {
+    "ajv": "^8.17.1"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/qubyyang/awesome-ios-sim.git"

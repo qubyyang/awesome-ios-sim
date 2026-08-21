@@ -32,7 +32,7 @@ struct SimulatorToolService: MCPToolHandling {
                 let snapshot = try controller.snapshot(udid: udid)
                 return try success("Captured state for \(snapshot.device.name) (\(udid)).", snapshot)
             case "simulator_diff", "simulator_plan":
-                let profile: SimulatorStateProfile = try requiredObject("profile", arguments)
+                let profile = try requiredProfile(arguments)
                 let snapshot = try resolveSnapshot(arguments, profile: profile)
                 let plan = try StatePlanner().makePlan(profile: profile, current: snapshot)
                 if name == "simulator_diff" {
@@ -136,6 +136,13 @@ struct SimulatorToolService: MCPToolHandling {
             throw MCPProtocolError.invalidParams("\(key) must be an object")
         }
         return try JSONDecoder().decode(T.self, from: StateCodec.encode(value, pretty: false))
+    }
+
+    private func requiredProfile(_ arguments: [String: JSONValue]) throws -> SimulatorStateProfile {
+        guard let value = arguments["profile"], case .object = value else {
+            throw MCPProtocolError.invalidParams("profile must be an object")
+        }
+        return try StateCodec.decodeProfile(from: StateCodec.encode(value, pretty: false))
     }
 
     private func encodeValue<T: Encodable>(_ value: T) throws -> JSONValue {
@@ -263,4 +270,3 @@ private extension SimulatorToolService {
         "additionalProperties": .bool(false),
     ])
 }
-

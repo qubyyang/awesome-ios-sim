@@ -44,12 +44,7 @@
           "type": "string",
           "minLength": 1
         }
-      },
-      "anyOf": [
-        { "required": ["udid"] },
-        { "required": ["name"] },
-        { "required": ["runtime"] }
-      ]
+      }
     },
     "spec": {
       "$ref": "#/$defs/spec"
@@ -66,7 +61,12 @@
         {
           "type": "array",
           "items": {
-            "type": ["boolean", "integer", "number", "string"]
+            "anyOf": [
+              { "type": "boolean" },
+              { "type": "integer" },
+              { "type": "number" },
+              { "type": "string" }
+            ]
           }
         }
       ]
@@ -126,8 +126,8 @@
             "required": ["presence"]
           },
           "then": {
-            "not": {
-              "required": ["sourcePath"]
+            "properties": {
+              "sourcePath": false
             }
           }
         }
@@ -161,11 +161,42 @@
         },
         "statusBar": {
           "type": "object",
-          "propertyNames": {
-            "pattern": "^[A-Za-z0-9-]+$"
-          },
-          "additionalProperties": {
-            "type": ["boolean", "integer", "number", "string"]
+          "minProperties": 1,
+          "additionalProperties": false,
+          "properties": {
+            "time": {
+              "type": "string"
+            },
+            "dataNetwork": {
+              "enum": ["hide", "wifi", "3g", "4g", "lte", "lte-a", "lte+", "5g", "5g+", "5g-uwb", "5g-uc"]
+            },
+            "wifiMode": {
+              "enum": ["searching", "failed", "active"]
+            },
+            "wifiBars": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 3
+            },
+            "cellularMode": {
+              "enum": ["notSupported", "searching", "failed", "active"]
+            },
+            "cellularBars": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4
+            },
+            "operatorName": {
+              "type": "string"
+            },
+            "batteryState": {
+              "enum": ["charging", "charged", "discharging"]
+            },
+            "batteryLevel": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
           }
         }
       }

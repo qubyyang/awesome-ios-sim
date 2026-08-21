@@ -143,19 +143,34 @@ public struct SimulatorStateProfile: Codable, Equatable, Sendable {
         guard kind == Self.kind else {
             throw StateCoreError.invalidProfile("kind must be \(Self.kind)")
         }
+        guard !metadata.name.isEmpty else {
+            throw StateCoreError.invalidProfile("metadata.name must not be empty")
+        }
         guard target.udid != nil || target.name != nil || target.runtime != nil else {
             throw StateCoreError.invalidProfile("target must include udid, name, or runtime")
         }
+        guard [target.udid, target.name, target.runtime].compactMap({ $0 }).allSatisfy({ !$0.isEmpty }) else {
+            throw StateCoreError.invalidProfile("target values must not be empty")
+        }
 
         let appIDs = spec.applications.map(\.bundleIdentifier)
+        guard appIDs.allSatisfy({ !$0.isEmpty }) else {
+            throw StateCoreError.invalidProfile("application bundle identifiers must not be empty")
+        }
         guard Set(appIDs).count == appIDs.count else {
             throw StateCoreError.invalidProfile("application bundle identifiers must be unique")
+        }
+        guard spec.applications.compactMap(\.sourcePath).allSatisfy({ !$0.isEmpty }) else {
+            throw StateCoreError.invalidProfile("application source paths must not be empty")
         }
         guard !spec.applications.contains(where: { $0.presence == .absent && $0.sourcePath != nil }) else {
             throw StateCoreError.invalidProfile("absent applications must not include sourcePath")
         }
 
         let preferenceIDs = spec.preferences.map(\.identifier)
+        guard spec.preferences.allSatisfy({ !$0.domain.isEmpty && !$0.key.isEmpty }) else {
+            throw StateCoreError.invalidProfile("preference domains and keys must not be empty")
+        }
         guard Set(preferenceIDs).count == preferenceIDs.count else {
             throw StateCoreError.invalidProfile("preference domain/key pairs must be unique")
         }
@@ -166,14 +181,73 @@ public struct SimulatorStateProfile: Codable, Equatable, Sendable {
         }
 
         if let statusBar = spec.statusBar {
-            guard statusBar.keys.allSatisfy({
-                $0.range(of: "^[A-Za-z0-9-]+$", options: .regularExpression) != nil
-            }) else {
-                throw StateCoreError.invalidProfile("status bar keys must contain only letters, digits, or hyphens")
-            }
-            guard statusBar.values.allSatisfy(\.isScalar) else {
-                throw StateCoreError.invalidProfile("status bar values must be scalars")
-            }
+            try validateStatusBar(statusBar)
+        }
+    }
+
+    private func validateStatusBar(_ statusBar: [String: JSONValue]) throws {
+        guard !statusBar.isEmpty else {
+            throw StateCoreError.invalidProfile("statusBar must contain at least one override")
+        }
+
+        let allowedKeys: Set<String> = [
+            "time", "dataNetwork", "wifiMode", "wifiBars", "cellularMode",
+            "cellularBars", "operatorName", "batteryState", "batteryLevel",
+        ]
+        let unknownKeys = Set(statusBar.keys).subtracting(allowedKeys).sorted()
+        guard unknownKeys.isEmpty else {
+            throw StateCoreError.invalidProfile(
+                "unsupported statusBar keys: \(unknownKeys.joined(separator: ", "))"
+            )
+        }
+
+        try requireString("time", in: statusBar)
+        try requireString("operatorName", in: statusBar)
+        try requireEnum(
+            "dataNetwork",
+            values: ["hide", "wifi", "3g", "4g", "lte", "lte-a", "lte+", "5g", "5g+", "5g-uwb", "5g-uc"],
+            in: statusBar
+        )
+        try requireEnum("wifiMode", values: ["searching", "failed", "active"], in: statusBar)
+        try requireEnum(
+            "cellularMode",
+            values: ["notSupported", "searching", "failed", "active"],
+            in: statusBar
+        )
+        try requireEnum("batteryState", values: ["charging", "charged", "discharging"], in: statusBar)
+        try requireInteger("wifiBars", range: 0 ... 3, in: statusBar)
+        try requireInteger("cellularBars", range: 0 ... 4, in: statusBar)
+        try requireInteger("batteryLevel", range: 0 ... 100, in: statusBar)
+    }
+
+    private func requireString(_ key: String, in values: [String: JSONValue]) throws {
+        guard let value = values[key] else { return }
+        guard case .string = value else {
+            throw StateCoreError.invalidProfile("statusBar.\(key) must be a string")
+        }
+    }
+
+    private func requireEnum(
+        _ key: String,
+        values allowed: Set<String>,
+        in values: [String: JSONValue]
+    ) throws {
+        guard let value = values[key] else { return }
+        guard case let .string(candidate) = value, allowed.contains(candidate) else {
+            throw StateCoreError.invalidProfile("statusBar.\(key) has an unsupported value")
+        }
+    }
+
+    private func requireInteger(
+        _ key: String,
+        range: ClosedRange<Int>,
+        in values: [String: JSONValue]
+    ) throws {
+        guard let value = values[key] else { return }
+        guard case let .integer(candidate) = value, range.contains(candidate) else {
+            throw StateCoreError.invalidProfile(
+                "statusBar.\(key) must be an integer from \(range.lowerBound) through \(range.upperBound)"
+            )
         }
     }
 }

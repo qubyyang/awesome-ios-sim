@@ -89,6 +89,26 @@ import SimulatorStateCore
     #expect(controller.executionCount == 1)
 }
 
+@Test func simulatorPlanRejectsUnknownProfileFieldsBeforeLiveRead() throws {
+    let controller = MCPStubController()
+    let server = MCPServer(toolHandler: SimulatorToolService(controller: controller))
+    let profile: JSONValue = .object([
+        "apiVersion": .string("awesome-ios-sim/v1alpha1"),
+        "kind": .string("SimulatorState"),
+        "metadata": .object(["name": .string("strict")]),
+        "target": .object(["udid": .string("DEVICE")]),
+        "spec": .object(["unknown": .bool(true)]),
+    ])
+    let response = try send(server, method: "tools/call", params: currentParams(merging: [
+        "name": .string("simulator_plan"),
+        "arguments": .object(["profile": profile]),
+    ]))
+    let result = try object(response["result"])
+
+    #expect(result["isError"] == .bool(true))
+    #expect(try object(result["structuredContent"])["error"]?.stringValue?.contains("unknown field") == true)
+}
+
 private func currentParams(
     merging values: [String: JSONValue] = [:]
 ) -> [String: JSONValue] {

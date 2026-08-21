@@ -74,6 +74,83 @@ private let device = SimulatorDevice(
     #expect(profile.spec.applications[0].launchArguments.isEmpty)
 }
 
+@Test func profileDecoderRejectsUnknownFieldsAtEveryManagedLevel() {
+    let documents = [
+        #"{"apiVersion":"awesome-ios-sim/v1alpha1","kind":"SimulatorState","metadata":{"name":"x"},"target":{"udid":"DEVICE"},"spec":{},"typo":true}"#,
+        #"{"apiVersion":"awesome-ios-sim/v1alpha1","kind":"SimulatorState","metadata":{"name":"x","typo":true},"target":{"udid":"DEVICE"},"spec":{}}"#,
+        #"{"apiVersion":"awesome-ios-sim/v1alpha1","kind":"SimulatorState","metadata":{"name":"x"},"target":{"udid":"DEVICE","typo":true},"spec":{}}"#,
+        #"{"apiVersion":"awesome-ios-sim/v1alpha1","kind":"SimulatorState","metadata":{"name":"x"},"target":{"udid":"DEVICE"},"spec":{"typo":true}}"#,
+        #"{"apiVersion":"awesome-ios-sim/v1alpha1","kind":"SimulatorState","metadata":{"name":"x"},"target":{"udid":"DEVICE"},"spec":{"applications":[{"bundleIdentifier":"com.example","typo":true}]}}"#,
+        #"{"apiVersion":"awesome-ios-sim/v1alpha1","kind":"SimulatorState","metadata":{"name":"x"},"target":{"udid":"DEVICE"},"spec":{"preferences":[{"domain":"x","key":"y","value":true,"typo":true}]}}"#,
+    ]
+
+    for document in documents {
+        #expect(throws: StateCoreError.self) {
+            try StateCodec.decodeProfile(from: Data(document.utf8))
+        }
+    }
+}
+
+@Test func profileValidationMatchesPublishedNonEmptyConstraints() {
+    let profiles = [
+        SimulatorStateProfile(metadata: .init(name: ""), target: .init(udid: "DEVICE"), spec: .init()),
+        SimulatorStateProfile(metadata: .init(name: "x"), target: .init(udid: ""), spec: .init()),
+        SimulatorStateProfile(
+            metadata: .init(name: "x"),
+            target: .init(udid: "DEVICE"),
+            spec: .init(applications: [.init(bundleIdentifier: "")])
+        ),
+        SimulatorStateProfile(
+            metadata: .init(name: "x"),
+            target: .init(udid: "DEVICE"),
+            spec: .init(applications: [.init(bundleIdentifier: "com.example", sourcePath: "")])
+        ),
+        SimulatorStateProfile(
+            metadata: .init(name: "x"),
+            target: .init(udid: "DEVICE"),
+            spec: .init(preferences: [.init(domain: "", key: "y", value: .bool(true))])
+        ),
+    ]
+
+    for profile in profiles {
+        #expect(throws: StateCoreError.self) { try profile.validate() }
+    }
+}
+
+@Test func statusBarValidationMatchesPublicSimctlContract() throws {
+    let valid = SimulatorStateProfile(
+        metadata: .init(name: "valid-status"),
+        target: .init(udid: "DEVICE"),
+        spec: .init(statusBar: [
+            "time": .string("09:41"),
+            "dataNetwork": .string("5g"),
+            "wifiBars": .integer(3),
+            "cellularBars": .integer(4),
+            "batteryState": .string("charged"),
+            "batteryLevel": .integer(100),
+        ])
+    )
+    try valid.validate()
+
+    let invalidOverrides: [[String: JSONValue]] = [
+        [:],
+        ["unknown": .string("value")],
+        ["wifiBars": .integer(4)],
+        ["cellularBars": .integer(-1)],
+        ["batteryLevel": .number(99.5)],
+        ["batteryState": .string("full")],
+        ["time": .integer(941)],
+    ]
+    for statusBar in invalidOverrides {
+        let profile = SimulatorStateProfile(
+            metadata: .init(name: "invalid-status"),
+            target: .init(udid: "DEVICE"),
+            spec: .init(statusBar: statusBar)
+        )
+        #expect(throws: StateCoreError.self) { try profile.validate() }
+    }
+}
+
 @Test func plannerProducesDeterministicSafeOrder() throws {
     let current = SimulatorSnapshot(
         generatedAt: "2026-08-18T00:00:00Z",
