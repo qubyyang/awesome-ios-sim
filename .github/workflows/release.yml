@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 concurrency:
   group: release-${{ github.ref }}
@@ -18,13 +19,18 @@ jobs:
       contents: read
 
     steps:
-      - name: Check out tagged source
+      - name: Check out source
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Verify version and changelog
-        run: Scripts/release/verify-version.sh "$GITHUB_REF_NAME"
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            Scripts/release/verify-version.sh "$GITHUB_REF_NAME"
+          else
+            Scripts/release/verify-version.sh
+          fi
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -64,7 +70,7 @@ jobs:
             runner: macos-15-intel
 
     steps:
-      - name: Check out tagged source
+      - name: Check out source
         uses: actions/checkout@v7
 
       - name: Verify runner architecture
@@ -76,6 +82,7 @@ jobs:
         run: Scripts/release/build-artifact.sh
 
       - name: Attest archive provenance
+        if: github.ref_type == 'tag'
         uses: actions/attest@v4
         with:
           subject-path: ${{ runner.temp }}/release-assets/*.tar.gz
@@ -93,6 +100,7 @@ jobs:
   publish:
     name: Publish GitHub Release
     needs: build
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
