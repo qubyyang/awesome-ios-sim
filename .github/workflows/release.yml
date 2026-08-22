@@ -129,6 +129,7 @@ jobs:
             flags+=(--prerelease)
           fi
           gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
             release-assets/*.tar.gz \
             release-assets/SHA256SUMS \
             "${flags[@]}"
