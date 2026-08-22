@@ -76,7 +76,9 @@ The executables are produced at:
 .build/release/ios-sim-state-mcp
 ```
 
-Homebrew distribution and signed release artifacts are planned after the schema stabilizes.
+Checksummed native archives for Apple Silicon and Intel macOS are published on the
+[Releases page](https://github.com/qubyyang/awesome-ios-sim/releases). These initial archives are not yet
+code-signed or notarized. Homebrew distribution and signed universal artifacts are the next distribution stage.
 
 ## Quick start
 
@@ -286,16 +288,16 @@ Scripts/release/verify-version.sh
 Scripts/release/build-artifact.sh
 ```
 
-Tag-driven GitHub automation builds separate arm64 and x86_64 archives, verifies SHA-256 checksums, and
-publishes provenance attestations. See the [compatibility contract](docs/COMPATIBILITY.md) and bilingual
-[release process](docs/RELEASING.md). No release is created from an untagged branch build.
+GitHub automation can run an unpublished release candidate from the default branch. Tag-driven runs build
+separate arm64 and x86_64 archives, verify SHA-256 checksums, and publish provenance attestations. See the
+[compatibility contract](docs/COMPATIBILITY.md) and bilingual [release process](docs/RELEASING.md). No release
+is created from an untagged branch build.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the
 [architecture notes](docs/ARCHITECTURE.md). Please do not add private CoreSimulator APIs.
 
 ## Roadmap
 
-- Publish the first tagged binaries after the release-readiness audit.
 - Add Homebrew distribution and signed universal artifacts.
 - Add reusable profile layers and presets.
 - Expand capability-aware settings without private frameworks.

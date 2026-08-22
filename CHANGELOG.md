@@ -6,6 +6,8 @@ initial alpha tag.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-22
+
 ### Added
 
 - Versioned `v1alpha1` Simulator State as Code profile and snapshot models.
@@ -22,3 +24,6 @@ initial alpha tag.
 - Profile decoding now rejects unknown fields, empty identifiers, and invalid public status bar override values
   instead of silently accepting inputs that differ from the published JSON Schema.
 - CI uses current official GitHub actions and enforces synchronized Swift, npm, and lockfile versions.
+
+[Unreleased]: https://github.com/qubyyang/awesome-ios-sim/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/qubyyang/awesome-ios-sim/releases/tag/v0.1.0

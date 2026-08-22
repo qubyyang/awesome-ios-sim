@@ -76,7 +76,9 @@ swift build -c release
 .build/release/ios-sim-state-mcp
 ```
 
-Schema 稳定后会补充 Homebrew 和签名后的 Release 产物。
+[Releases 页面](https://github.com/qubyyang/awesome-ios-sim/releases)会提供 Apple Silicon 与 Intel macOS
+的原生压缩包及校验和。首批压缩包尚未进行代码签名和公证；Homebrew 与签名后的 Universal Release
+是下一分发阶段。
 
 ## 快速开始
 
@@ -280,15 +282,15 @@ Scripts/release/verify-version.sh
 Scripts/release/build-artifact.sh
 ```
 
-Tag 驱动的 GitHub 自动化会分别构建 arm64 与 x86_64 压缩包，验证 SHA-256 校验和并发布来源证明。
-详见[兼容性契约](docs/COMPATIBILITY.md)和双语[发布流程](docs/RELEASING.md)。未打 Tag 的分支构建不会创建 Release。
+GitHub 自动化可以从默认分支运行不公开发布的 Release Candidate。Tag 驱动的运行会分别构建 arm64 与
+x86_64 压缩包，验证 SHA-256 校验和并发布来源证明。详见[兼容性契约](docs/COMPATIBILITY.md)和双语
+[发布流程](docs/RELEASING.md)。未打 Tag 的分支构建不会创建 Release。
 
 请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)、[SECURITY.md](SECURITY.md) 和
 [架构说明](docs/ARCHITECTURE.md)。项目不接受私有 CoreSimulator API。
 
 ## 路线图
 
-- 通过发布就绪审计后发布首批带 Tag 的二进制产物。
 - 提供 Homebrew 与签名后的 Universal Release。
 - 支持可复用的 Profile Layer 和 Preset。
 - 在不依赖私有框架的前提下扩展能力感知设置。
