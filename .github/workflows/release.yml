@@ -57,9 +57,6 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
-      id-token: write
-      attestations: write
-      artifact-metadata: write
     strategy:
       fail-fast: false
       matrix:
@@ -81,13 +78,7 @@ jobs:
           AISS_DIST_DIR: ${{ runner.temp }}/release-assets
         run: Scripts/release/build-artifact.sh
 
-      - name: Attest archive provenance
-        if: github.ref_type == 'tag'
-        uses: actions/attest@v4
-        with:
-          subject-path: ${{ runner.temp }}/release-assets/*.tar.gz
-
-      - name: Upload release artifact
+      - name: Upload native build artifact
         uses: actions/upload-artifact@v7
         with:
           name: release-${{ matrix.architecture }}
@@ -97,9 +88,164 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  package:
+    name: Package universal distribution
+    needs: build
+    runs-on: macos-15
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Download native artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: release-*
+          path: ${{ runner.temp }}/native-assets
+          merge-multiple: true
+
+      - name: Require complete distribution credentials for tags
+        if: github.ref_type == 'tag'
+        env:
+          MACOS_DEVELOPER_ID_CERTIFICATE_BASE64: ${{ secrets.MACOS_DEVELOPER_ID_CERTIFICATE_BASE64 }}
+          MACOS_DEVELOPER_ID_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+          APPLE_NOTARY_KEY_BASE64: ${{ secrets.APPLE_NOTARY_KEY_BASE64 }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+        run: |
+          missing=0
+          for variable in \
+            MACOS_DEVELOPER_ID_CERTIFICATE_BASE64 \
+            MACOS_DEVELOPER_ID_CERTIFICATE_PASSWORD \
+            APPLE_NOTARY_KEY_BASE64 \
+            APPLE_NOTARY_KEY_ID \
+            APPLE_NOTARY_ISSUER_ID
+          do
+            if [[ -z "${!variable}" ]]; then
+              echo "::error::Missing required release secret: $variable"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Install Developer ID certificate and notary key
+        if: github.ref_type == 'tag'
+        id: signing
+        env:
+          MACOS_DEVELOPER_ID_CERTIFICATE_BASE64: ${{ secrets.MACOS_DEVELOPER_ID_CERTIFICATE_BASE64 }}
+          MACOS_DEVELOPER_ID_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+          APPLE_NOTARY_KEY_BASE64: ${{ secrets.APPLE_NOTARY_KEY_BASE64 }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+        run: |
+          certificate_path="$RUNNER_TEMP/developer-id-application.p12"
+          keychain_path="$RUNNER_TEMP/awesome-ios-sim-signing.keychain-db"
+          notary_key_path="$RUNNER_TEMP/AuthKey_${APPLE_NOTARY_KEY_ID}.p8"
+          task_keychain_password="$(openssl rand -base64 32)"
+
+          printf '%s' "$MACOS_DEVELOPER_ID_CERTIFICATE_BASE64" \
+            | base64 --decode -o "$certificate_path"
+          printf '%s' "$APPLE_NOTARY_KEY_BASE64" \
+            | base64 --decode -o "$notary_key_path"
+
+          security create-keychain -p "$task_keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$task_keychain_password" "$keychain_path"
+          security import "$certificate_path" \
+            -P "$MACOS_DEVELOPER_ID_CERTIFICATE_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$keychain_path"
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -k "$task_keychain_password" \
+            "$keychain_path"
+          security list-keychain -d user -s "$keychain_path"
+
+          identities="$({
+            security find-identity -v -p codesigning "$keychain_path" \
+              | sed -n 's/.*"\(Developer ID Application:[^"]*\)".*/\1/p'
+          } || true)"
+          identity_count="$(printf '%s\n' "$identities" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [[ "$identity_count" != "1" ]]; then
+            echo "::error::Expected exactly one Developer ID Application identity, found $identity_count"
+            exit 1
+          fi
+
+          echo "identity=$identities" >> "$GITHUB_OUTPUT"
+          echo "keychain_path=$keychain_path" >> "$GITHUB_OUTPUT"
+          echo "certificate_path=$certificate_path" >> "$GITHUB_OUTPUT"
+          echo "notary_key_path=$notary_key_path" >> "$GITHUB_OUTPUT"
+
+      - name: Build universal distribution archive
+        env:
+          AISS_NATIVE_ASSETS_DIR: ${{ runner.temp }}/native-assets
+          AISS_DIST_DIR: ${{ runner.temp }}/release-assets
+          AISS_CODESIGN_IDENTITY: ${{ steps.signing.outputs.identity }}
+          AISS_REQUIRE_SIGNING: ${{ github.ref_type == 'tag' }}
+        run: Scripts/release/build-universal-artifact.sh
+
+      - name: Submit signed archive for Apple notarization
+        if: github.ref_type == 'tag'
+        env:
+          AISS_NOTARY_KEY_PATH: ${{ steps.signing.outputs.notary_key_path }}
+          AISS_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          AISS_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+        run: >-
+          Scripts/release/notarize-artifact.sh
+          "$RUNNER_TEMP/release-assets/awesome-ios-sim-${GITHUB_REF_NAME#v}-macos-universal.zip"
+
+      - name: Render Homebrew Formula
+        run: |
+          version="$(Scripts/release/verify-version.sh)"
+          Scripts/release/render-homebrew-formula.sh \
+            "$RUNNER_TEMP/release-assets/awesome-ios-sim-${version}-macos-universal.zip" \
+            "$RUNNER_TEMP/release-assets/awesome-ios-sim.rb"
+
+      - name: Validate Homebrew Formula syntax
+        run: ruby -c "$RUNNER_TEMP/release-assets/awesome-ios-sim.rb"
+
+      - name: Attest signed distribution provenance
+        if: github.ref_type == 'tag'
+        uses: actions/attest@v4
+        with:
+          subject-path: ${{ runner.temp }}/release-assets/*
+
+      - name: Upload universal distribution
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-universal
+          path: |
+            ${{ runner.temp }}/release-assets/*.zip
+            ${{ runner.temp }}/release-assets/*.sha256
+            ${{ runner.temp }}/release-assets/*.notarization.json
+            ${{ runner.temp }}/release-assets/*.rb
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Remove temporary signing material
+        if: always() && github.ref_type == 'tag'
+        env:
+          KEYCHAIN_PATH: ${{ steps.signing.outputs.keychain_path }}
+          CERTIFICATE_PATH: ${{ steps.signing.outputs.certificate_path }}
+          NOTARY_KEY_PATH: ${{ steps.signing.outputs.notary_key_path }}
+        run: |
+          if [[ -n "$KEYCHAIN_PATH" ]]; then
+            security delete-keychain "$KEYCHAIN_PATH" || true
+          fi
+          if [[ -n "$CERTIFICATE_PATH" ]]; then
+            rm -f "$CERTIFICATE_PATH"
+          fi
+          if [[ -n "$NOTARY_KEY_PATH" ]]; then
+            rm -f "$NOTARY_KEY_PATH"
+          fi
+
   publish:
     name: Publish GitHub Release
-    needs: build
+    needs: package
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -107,18 +253,17 @@ jobs:
       contents: write
 
     steps:
-      - name: Download architecture artifacts
+      - name: Download universal distribution
         uses: actions/download-artifact@v8
         with:
-          pattern: release-*
+          name: release-universal
           path: release-assets
-          merge-multiple: true
 
       - name: Verify checksums and create manifest
         run: |
           cd release-assets
           sha256sum --check *.sha256
-          sha256sum *.tar.gz > SHA256SUMS
+          sha256sum *.zip *.rb *.notarization.json > SHA256SUMS
 
       - name: Publish immutable asset set
         env:
@@ -130,6 +275,8 @@ jobs:
           fi
           gh release create "$GITHUB_REF_NAME" \
             --repo "$GITHUB_REPOSITORY" \
-            release-assets/*.tar.gz \
+            release-assets/*.zip \
+            release-assets/*.rb \
+            release-assets/*.notarization.json \
             release-assets/SHA256SUMS \
             "${flags[@]}"

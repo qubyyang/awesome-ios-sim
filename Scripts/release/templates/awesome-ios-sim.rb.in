@@ -1,0 +1,24 @@
+class AwesomeIosSim < Formula
+  desc "Simulator State as Code for iOS developers and AI agents"
+  homepage "https://github.com/qubyyang/awesome-ios-sim"
+  url "https://github.com/qubyyang/awesome-ios-sim/releases/download/v@VERSION@/awesome-ios-sim-@VERSION@-macos-universal.zip"
+  version "@VERSION@"
+  sha256 "@SHA256@"
+  license "MIT"
+
+  depends_on macos: :ventura
+
+  def install
+    package = "awesome-ios-sim-#{version}-macos-universal"
+    bin.install "#{package}/bin/ios-sim-state"
+    bin.install "#{package}/bin/ios-sim-state-mcp"
+    doc.install "#{package}/README.md"
+    doc.install "#{package}/README.zh-CN.md"
+    prefix.install "#{package}/RELEASE-METADATA.json"
+  end
+
+  test do
+    assert_equal version.to_s, shell_output("#{bin}/ios-sim-state --version").strip
+    assert_equal version.to_s, shell_output("#{bin}/ios-sim-state-mcp --version").strip
+  end
+end
