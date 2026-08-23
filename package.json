@@ -1,6 +1,6 @@
 {
   "name": "@qubyyang/awesome-ios-sim",
-  "version": "0.1.0",
+  "version": "0.2.0-dev",
   "description": "Simulator State as Code for iOS developers, CI pipelines, MCP clients, and DeepSeek Harness",
   "type": "module",
   "exports": {
