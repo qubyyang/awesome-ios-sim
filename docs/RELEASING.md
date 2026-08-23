@@ -20,6 +20,8 @@ Prepare a release commit:
    contact Apple's notary service, attest artifacts, or publish a Release.
 6. Confirm all five protected distribution secrets listed in `DISTRIBUTION.md` are configured.
 7. Create and push an annotated tag, for example `v0.2.0`. The tag must point at the reviewed release commit.
+8. After the Release succeeds, review its generated `awesome-ios-sim.rb`, replace the repository Formula with
+   that exact file in a follow-up pull request, and run `brew style` plus the Formula test before merging.
 
 The tag-triggered workflow validates version and changelog alignment before building. It uses
 `macos-15` for arm64 and `macos-15-intel` for x86_64, then returns to macOS to merge, sign, notarize, and attest
@@ -58,6 +60,8 @@ ID 签名、Apple `notarytool`、Homebrew Formula 生成、SHA-256 验证和 Git
    也不创建公开 Release。
 6. 确认 `DISTRIBUTION.md` 中列出的五个受保护分发 Secret 已配置。
 7. 创建并推送带说明的 Tag，例如 `v0.2.0`；Tag 必须指向已审查的 Release Commit。
+8. Release 成功后审查自动生成的 `awesome-ios-sim.rb`，在后续 Pull Request 中用它精确替换仓库 Formula，
+   合并前运行 `brew style` 与 Formula 测试。
 
 Tag 触发的工作流会先验证版本与 CHANGELOG，再分别在 `macos-15` arm64 和 `macos-15-intel` x86_64
 Runner 上构建，然后回到 macOS 合并、签名、公证并证明 Universal 分发产物。缺少凭据、出现多个

@@ -148,6 +148,10 @@ jobs:
           notary_key_path="$RUNNER_TEMP/AuthKey_${APPLE_NOTARY_KEY_ID}.p8"
           task_keychain_password="$(openssl rand -base64 32)"
 
+          echo "keychain_path=$keychain_path" >> "$GITHUB_OUTPUT"
+          echo "certificate_path=$certificate_path" >> "$GITHUB_OUTPUT"
+          echo "notary_key_path=$notary_key_path" >> "$GITHUB_OUTPUT"
+
           printf '%s' "$MACOS_DEVELOPER_ID_CERTIFICATE_BASE64" \
             | base64 --decode -o "$certificate_path"
           printf '%s' "$APPLE_NOTARY_KEY_BASE64" \
@@ -176,9 +180,6 @@ jobs:
           fi
 
           echo "identity=$identities" >> "$GITHUB_OUTPUT"
-          echo "keychain_path=$keychain_path" >> "$GITHUB_OUTPUT"
-          echo "certificate_path=$certificate_path" >> "$GITHUB_OUTPUT"
-          echo "notary_key_path=$notary_key_path" >> "$GITHUB_OUTPUT"
 
       - name: Build universal distribution archive
         env:
