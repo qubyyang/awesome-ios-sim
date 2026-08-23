@@ -85,6 +85,14 @@ brew tap qubyyang/awesome-ios-sim https://github.com/qubyyang/awesome-ios-sim
 brew install qubyyang/awesome-ios-sim/awesome-ios-sim
 ```
 
+On a prerelease macOS version that Homebrew has not identified yet, an internal `packages.*_dunno` API error can
+be bypassed with Homebrew's source-tap mode:
+
+```bash
+HOMEBREW_NO_INSTALL_FROM_API=1 \
+  brew install qubyyang/awesome-ios-sim/awesome-ios-sim
+```
+
 The next tagged distribution is gated on Developer ID signing and Apple notarization and will use one universal
 archive on both architectures. See the [signed distribution guide](docs/DISTRIBUTION.md) for the trust model.
 

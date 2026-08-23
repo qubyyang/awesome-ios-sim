@@ -84,6 +84,14 @@ brew tap qubyyang/awesome-ios-sim https://github.com/qubyyang/awesome-ios-sim
 brew install qubyyang/awesome-ios-sim/awesome-ios-sim
 ```
 
+如果使用 Homebrew 尚未识别的 macOS 预发布版本，并遇到内部 `packages.*_dunno` API 错误，可以切换到
+Homebrew 的源码 Tap 模式：
+
+```bash
+HOMEBREW_NO_INSTALL_FROM_API=1 \
+  brew install qubyyang/awesome-ios-sim/awesome-ios-sim
+```
+
 下一个带 Tag 的分发版本会强制经过 Developer ID 签名与 Apple 公证，并在两种架构上使用同一份
 Universal 压缩包。完整信任模型见[签名分发指南](docs/DISTRIBUTION.md)。
 

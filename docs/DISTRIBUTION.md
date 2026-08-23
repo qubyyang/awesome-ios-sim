@@ -62,6 +62,10 @@ brew tap qubyyang/awesome-ios-sim https://github.com/qubyyang/awesome-ios-sim
 brew install qubyyang/awesome-ios-sim/awesome-ios-sim
 ```
 
+For prerelease macOS versions not yet recognized by Homebrew, use
+`HOMEBREW_NO_INSTALL_FROM_API=1 brew install qubyyang/awesome-ios-sim/awesome-ios-sim` if Homebrew reports an
+internal `packages.*_dunno` API error. This keeps resolution on the already cloned, checksum-verifying tap.
+
 ## 中文
 
 Release 流水线把原生编译、Universal 组装、签名、公证和发布拆成独立门禁：
@@ -92,3 +96,7 @@ SHA-256；后续签名 Tag 会为已公证的 Universal 压缩包生成 Formula�
 brew tap qubyyang/awesome-ios-sim https://github.com/qubyyang/awesome-ios-sim
 brew install qubyyang/awesome-ios-sim/awesome-ios-sim
 ```
+
+如果 Homebrew 尚未识别当前 macOS 预发布版本，并报告内部 `packages.*_dunno` API 错误，请使用
+`HOMEBREW_NO_INSTALL_FROM_API=1 brew install qubyyang/awesome-ios-sim/awesome-ios-sim`，让解析保持在已经
+克隆且会验证校验和的源码 Tap。
