@@ -6,6 +6,16 @@ initial alpha tag.
 
 ## [Unreleased]
 
+### Added
+
+- Universal arm64/x86_64 distribution archives assembled from independently built native artifacts.
+- Fail-closed Developer ID signing and Apple `notarytool` automation for tagged releases.
+- Generated Homebrew Formula assets bound to the notarized archive checksum.
+
+### Changed
+
+- Manual release-candidate runs validate the universal packaging path without requiring or exposing signing secrets.
+
 ## [0.1.0] - 2026-08-22
 
 ### Added

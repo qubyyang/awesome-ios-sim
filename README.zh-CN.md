@@ -1,6 +1,6 @@
 # awesome-ios-sim
 
-[English](README.md) · [MCP 接入指南](docs/MCP.md) · [DeepSeek Harness](docs/DEEPSEEK_HARNESS.zh-CN.md) · [架构说明](docs/ARCHITECTURE.md)
+[English](README.md) · [MCP 接入指南](docs/MCP.md) · [DeepSeek Harness](docs/DEEPSEEK_HARNESS.zh-CN.md) · [签名分发](docs/DISTRIBUTION.md) · [架构说明](docs/ARCHITECTURE.md)
 
 [![CI](https://github.com/qubyyang/awesome-ios-sim/actions/workflows/ci.yml/badge.svg)](https://github.com/qubyyang/awesome-ios-sim/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -77,8 +77,15 @@ swift build -c release
 ```
 
 [Releases 页面](https://github.com/qubyyang/awesome-ios-sim/releases)会提供 Apple Silicon 与 Intel macOS
-的原生压缩包及校验和。首批压缩包尚未进行代码签名和公证；Homebrew 与签名后的 Universal Release
-是下一分发阶段。
+的原生压缩包及校验和。首批压缩包尚未进行代码签名和公证，可以通过本仓库的显式 Homebrew Tap 安装：
+
+```bash
+brew tap qubyyang/awesome-ios-sim https://github.com/qubyyang/awesome-ios-sim
+brew install qubyyang/awesome-ios-sim/awesome-ios-sim
+```
+
+下一个带 Tag 的分发版本会强制经过 Developer ID 签名与 Apple 公证，并在两种架构上使用同一份
+Universal 压缩包。完整信任模型见[签名分发指南](docs/DISTRIBUTION.md)。
 
 ## 快速开始
 
@@ -283,15 +290,16 @@ Scripts/release/build-artifact.sh
 ```
 
 GitHub 自动化可以从默认分支运行不公开发布的 Release Candidate。Tag 驱动的运行会分别构建 arm64 与
-x86_64 压缩包，验证 SHA-256 校验和并发布来源证明。详见[兼容性契约](docs/COMPATIBILITY.md)和双语
-[发布流程](docs/RELEASING.md)。未打 Tag 的分支构建不会创建 Release。
+x86_64 Slice，合并并验证 Universal 压缩包，然后强制执行 Developer ID 签名、Apple 公证、绑定
+校验和的 Homebrew Formula 和 GitHub 来源证明。详见[兼容性契约](docs/COMPATIBILITY.md)、
+[分发契约](docs/DISTRIBUTION.md)和双语[发布流程](docs/RELEASING.md)。未打 Tag 的分支构建不会创建 Release。
 
 请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)、[SECURITY.md](SECURITY.md) 和
 [架构说明](docs/ARCHITECTURE.md)。项目不接受私有 CoreSimulator API。
 
 ## 路线图
 
-- 提供 Homebrew 与签名后的 Universal Release。
+- 配置受保护的 Developer ID 与 App Store Connect 发布凭据。
 - 支持可复用的 Profile Layer 和 Preset。
 - 在不依赖私有框架的前提下扩展能力感知设置。
 - 基于同一状态引擎构建原生 SwiftUI 配套应用。

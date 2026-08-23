@@ -2,11 +2,10 @@
 
 ## English
 
-Release automation produces separate native archives for Apple Silicon and Intel macOS. Each archive contains
-the CLI, MCP server, license, bilingual README files, and machine-readable release metadata. GitHub Actions
-verifies the complete test suite, publishes SHA-256 checksums, and generates a provenance attestation for each
-archive. Code signing, notarization, universal binaries, and Homebrew distribution are intentionally deferred to
-the next roadmap stage.
+Release automation compiles separate Apple Silicon and Intel slices, verifies both native archives, and merges
+the CLI and MCP server into one universal ZIP. Tagged releases must then pass Developer ID signing with hardened
+runtime and secure timestamps, Apple `notarytool`, Homebrew Formula generation, SHA-256 verification, and GitHub
+artifact attestation. See [the distribution contract](DISTRIBUTION.md) for credential names and trust boundaries.
 
 Prepare a release commit:
 
@@ -17,28 +16,35 @@ Prepare a release commit:
    `Scripts/release/build-artifact.sh` on at least one supported architecture.
 4. Commit and push the release preparation.
 5. Run the `Release` workflow manually from that commit. This release-candidate run must validate both native
-   architectures; it uploads short-lived artifacts but does not attest or publish them.
-6. Create and push an annotated tag, for example `v0.1.0`. The tag must point at the reviewed release commit.
+   architectures, the unsigned universal archive, and the generated Formula. It does not read signing secrets,
+   contact Apple's notary service, attest artifacts, or publish a Release.
+6. Confirm all five protected distribution secrets listed in `DISTRIBUTION.md` are configured.
+7. Create and push an annotated tag, for example `v0.2.0`. The tag must point at the reviewed release commit.
 
 The tag-triggered workflow validates version and changelog alignment before building. It uses
-`macos-15` for arm64 and `macos-15-intel` for x86_64, then creates the GitHub Release only after both artifacts
-and checksums succeed. Prerelease tags such as `v0.2.0-rc.1` are marked as prereleases automatically.
+`macos-15` for arm64 and `macos-15-intel` for x86_64, then returns to macOS to merge, sign, notarize, and attest
+the universal distribution. Missing credentials, multiple Developer ID identities, a non-`Accepted` notarization,
+or any checksum mismatch prevents publication. Prerelease tags such as `v0.2.0-rc.1` are marked automatically.
 
 Verify a downloaded release:
 
 ```bash
 shasum -a 256 -c SHA256SUMS
-gh attestation verify awesome-ios-sim-0.1.0-macos-arm64.tar.gz \
+gh attestation verify awesome-ios-sim-0.2.0-macos-universal.zip \
   -R qubyyang/awesome-ios-sim
+unzip -p awesome-ios-sim-0.2.0-macos-universal.zip \
+  awesome-ios-sim-0.2.0-macos-universal/bin/ios-sim-state > ios-sim-state
+codesign --verify --strict --verbose=2 ios-sim-state
 ```
 
 Do not retarget or reuse a published version tag. If a release is wrong, publish a new patch version.
 
 ## 中文
 
-Release 自动化会分别生成 Apple Silicon 与 Intel macOS 原生压缩包。每个压缩包包含 CLI、MCP Server、
-许可证、中英文 README 和机器可读的 Release Metadata。GitHub Actions 会运行完整测试、发布 SHA-256
-校验和，并为每个压缩包生成来源证明。代码签名、公证、Universal Binary 和 Homebrew 分发留到下一路线图阶段。
+Release 自动化会分别编译 Apple Silicon 与 Intel Slice，验证两个原生压缩包，再把 CLI 与 MCP Server
+合并为一份 Universal ZIP。Tag 发布必须继续通过带 Hardened Runtime 与 Secure Timestamp 的 Developer
+ID 签名、Apple `notarytool`、Homebrew Formula 生成、SHA-256 验证和 GitHub 来源证明。Secret 名称与
+信任边界见[分发契约](DISTRIBUTION.md)。
 
 准备 Release Commit：
 
@@ -48,11 +54,14 @@ Release 自动化会分别生成 Apple Silicon 与 Intel macOS 原生压缩包�
    `Scripts/release/build-artifact.sh`。
 4. 提交并推送 Release Preparation Commit。
 5. 从该 Commit 手动运行 `Release` 工作流。Release Candidate 必须通过两个原生架构；该次运行只上传
-   短期产物，不生成来源证明，也不创建公开 Release。
-6. 创建并推送带说明的 Tag，例如 `v0.1.0`；Tag 必须指向已审查的 Release Commit。
+   短期的未签名 Universal 产物并验证 Formula，不读取签名 Secret、不请求 Apple 公证、不生成来源证明，
+   也不创建公开 Release。
+6. 确认 `DISTRIBUTION.md` 中列出的五个受保护分发 Secret 已配置。
+7. 创建并推送带说明的 Tag，例如 `v0.2.0`；Tag 必须指向已审查的 Release Commit。
 
 Tag 触发的工作流会先验证版本与 CHANGELOG，再分别在 `macos-15` arm64 和 `macos-15-intel` x86_64
-Runner 上构建；只有两份产物与校验和全部成功后才创建 GitHub Release。`v0.2.0-rc.1` 之类的 Tag
-会自动标记为 Prerelease。
+Runner 上构建，然后回到 macOS 合并、签名、公证并证明 Universal 分发产物。缺少凭据、出现多个
+Developer ID 身份、公证结果不是 `Accepted` 或校验和不一致时都会阻止发布。`v0.2.0-rc.1` 之类的
+Tag 会自动标记为 Prerelease。
 
 不要移动或重复使用已经发布的版本 Tag；Release 有误时应发布新的补丁版本。

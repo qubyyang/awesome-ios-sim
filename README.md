@@ -1,6 +1,6 @@
 # awesome-ios-sim
 
-[简体中文](README.zh-CN.md) · [MCP guide](docs/MCP.md) · [DeepSeek Harness](docs/DEEPSEEK_HARNESS.md) · [Architecture](docs/ARCHITECTURE.md)
+[简体中文](README.zh-CN.md) · [MCP guide](docs/MCP.md) · [DeepSeek Harness](docs/DEEPSEEK_HARNESS.md) · [Signed distribution](docs/DISTRIBUTION.md) · [Architecture](docs/ARCHITECTURE.md)
 
 [![CI](https://github.com/qubyyang/awesome-ios-sim/actions/workflows/ci.yml/badge.svg)](https://github.com/qubyyang/awesome-ios-sim/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -78,7 +78,15 @@ The executables are produced at:
 
 Checksummed native archives for Apple Silicon and Intel macOS are published on the
 [Releases page](https://github.com/qubyyang/awesome-ios-sim/releases). These initial archives are not yet
-code-signed or notarized. Homebrew distribution and signed universal artifacts are the next distribution stage.
+code-signed or notarized. Install the current release through this repository's explicit Homebrew tap:
+
+```bash
+brew tap qubyyang/awesome-ios-sim https://github.com/qubyyang/awesome-ios-sim
+brew install qubyyang/awesome-ios-sim/awesome-ios-sim
+```
+
+The next tagged distribution is gated on Developer ID signing and Apple notarization and will use one universal
+archive on both architectures. See the [signed distribution guide](docs/DISTRIBUTION.md) for the trust model.
 
 ## Quick start
 
@@ -289,16 +297,17 @@ Scripts/release/build-artifact.sh
 ```
 
 GitHub automation can run an unpublished release candidate from the default branch. Tag-driven runs build
-separate arm64 and x86_64 archives, verify SHA-256 checksums, and publish provenance attestations. See the
-[compatibility contract](docs/COMPATIBILITY.md) and bilingual [release process](docs/RELEASING.md). No release
-is created from an untagged branch build.
+separate arm64 and x86_64 slices, merge and validate a universal archive, then require Developer ID signing,
+Apple notarization, a checksum-bound Homebrew Formula, and GitHub provenance before publishing. See the
+[compatibility contract](docs/COMPATIBILITY.md), [distribution contract](docs/DISTRIBUTION.md), and bilingual
+[release process](docs/RELEASING.md). No release is created from an untagged branch build.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the
 [architecture notes](docs/ARCHITECTURE.md). Please do not add private CoreSimulator APIs.
 
 ## Roadmap
 
-- Add Homebrew distribution and signed universal artifacts.
+- Configure the protected Developer ID and App Store Connect release credentials.
 - Add reusable profile layers and presets.
 - Expand capability-aware settings without private frameworks.
 - Build a native SwiftUI companion app on top of the same state engine.

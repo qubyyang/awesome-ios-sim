@@ -43,6 +43,12 @@ jobs:
       - name: Validate version contract
         run: Scripts/release/verify-version.sh
 
+      - name: Validate distribution automation syntax
+        run: |
+          bash -n Scripts/release/*.sh
+          ruby -c Formula/awesome-ios-sim.rb
+          ruby -c Scripts/release/templates/awesome-ios-sim.rb.in
+
       - name: Build release products
         run: swift build -c release
 
