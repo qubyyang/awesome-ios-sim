@@ -31,8 +31,16 @@ struct SimulatorToolService: MCPToolHandling {
                 let udid = try requiredString("udid", arguments)
                 let snapshot = try controller.snapshot(udid: udid)
                 return try success("Captured state for \(snapshot.device.name) (\(udid)).", snapshot)
+            case "simulator_presets":
+                return try success(
+                    "Found \(SimulatorStatePresetCatalog.descriptors.count) built-in presets.",
+                    SimulatorStatePresetCatalog.descriptors
+                )
+            case "simulator_compose":
+                let profile = try composedProfile(arguments)
+                return try success("Composed profile \(profile.metadata.name).", profile)
             case "simulator_diff", "simulator_plan":
-                let profile = try requiredProfile(arguments)
+                let profile = try composedProfile(arguments)
                 let snapshot = try resolveSnapshot(arguments, profile: profile)
                 let plan = try StatePlanner().makePlan(profile: profile, current: snapshot)
                 if name == "simulator_diff" {
@@ -145,6 +153,39 @@ struct SimulatorToolService: MCPToolHandling {
         return try StateCodec.decodeProfile(from: StateCodec.encode(value, pretty: false))
     }
 
+    private func composedProfile(_ arguments: [String: JSONValue]) throws -> SimulatorStateProfile {
+        let profile = try requiredProfile(arguments)
+        guard let value = arguments["overlays"] else { return profile }
+        guard case let .array(values) = value else {
+            throw MCPProtocolError.invalidParams("overlays must be an array")
+        }
+
+        let overlays = try values.enumerated().map { index, value -> SimulatorStateOverlay in
+            guard case let .object(object) = value else {
+                throw MCPProtocolError.invalidParams("overlays[\(index)] must be an object")
+            }
+            let unknown = Set(object.keys).subtracting(["preset", "layer"])
+            guard unknown.isEmpty, object.count == 1 else {
+                throw MCPProtocolError.invalidParams(
+                    "overlays[\(index)] must contain exactly one of preset or layer"
+                )
+            }
+            if let preset = object["preset"]?.stringValue, !preset.isEmpty {
+                return .preset(preset)
+            }
+            if let layerValue = object["layer"], case .object = layerValue {
+                let layer = try StateCodec.decodeLayer(
+                    from: StateCodec.encode(layerValue, pretty: false)
+                )
+                return .layer(layer)
+            }
+            throw MCPProtocolError.invalidParams(
+                "overlays[\(index)] preset must be a non-empty string or layer must be an object"
+            )
+        }
+        return try SimulatorStateComposer().compose(profile: profile, overlays: overlays)
+    }
+
     private func encodeValue<T: Encodable>(_ value: T) throws -> JSONValue {
         try JSONDecoder().decode(JSONValue.self, from: StateCodec.encode(value, pretty: false))
     }
@@ -187,6 +228,36 @@ private extension SimulatorToolService {
                 "required": .array([.string("udid")]),
                 "additionalProperties": .bool(false),
             ]),
+            outputSchema: objectSchema,
+            annotations: .object([
+                "readOnlyHint": .bool(true),
+                "destructiveHint": .bool(false),
+                "idempotentHint": .bool(true),
+                "openWorldHint": .bool(false),
+            ])
+        ),
+        .init(
+            name: "simulator_presets",
+            title: "List Simulator State Presets",
+            description: "List the built-in reusable state presets accepted by profile composition.",
+            inputSchema: .object([
+                "$schema": .string("https://json-schema.org/draft/2020-12/schema"),
+                "type": .string("object"),
+                "additionalProperties": .bool(false),
+            ]),
+            outputSchema: objectSchema,
+            annotations: .object([
+                "readOnlyHint": .bool(true),
+                "destructiveHint": .bool(false),
+                "idempotentHint": .bool(true),
+                "openWorldHint": .bool(false),
+            ])
+        ),
+        .init(
+            name: "simulator_compose",
+            title: "Compose Simulator State",
+            description: "Compose a base profile with ordered layer documents and built-in presets. Never reads or mutates a simulator.",
+            inputSchema: composeInputSchema,
             outputSchema: objectSchema,
             annotations: .object([
                 "readOnlyHint": .bool(true),
@@ -265,8 +336,55 @@ private extension SimulatorToolService {
                 "type": .string("string"),
                 "description": .string("Optional explicit live simulator target"),
             ]),
+            "overlays": overlayArraySchema,
         ]),
         "required": .array([.string("profile")]),
         "additionalProperties": .bool(false),
+    ])
+
+    static let composeInputSchema: JSONValue = .object([
+        "$schema": .string("https://json-schema.org/draft/2020-12/schema"),
+        "type": .string("object"),
+        "properties": .object([
+            "profile": .object([
+                "type": .string("object"),
+                "description": .string("awesome-ios-sim/v1alpha1 base profile object"),
+            ]),
+            "overlays": overlayArraySchema,
+        ]),
+        "required": .array([.string("profile")]),
+        "additionalProperties": .bool(false),
+    ])
+
+    static let overlayArraySchema: JSONValue = .object([
+        "type": .string("array"),
+        "description": .string("Ordered presets and layer documents; later entries win."),
+        "items": .object([
+            "oneOf": .array([
+                .object([
+                    "type": .string("object"),
+                    "properties": .object([
+                        "preset": .object([
+                            "type": .string("string"),
+                            "enum": .array(SimulatorStatePresetCatalog.names.map(JSONValue.string)),
+                        ]),
+                    ]),
+                    "required": .array([.string("preset")]),
+                    "additionalProperties": .bool(false),
+                ]),
+                .object([
+                    "type": .string("object"),
+                    "properties": .object([
+                        "layer": .object([
+                            "type": .string("object"),
+                            "description": .string("awesome-ios-sim/v1alpha1 SimulatorStateLayer object"),
+                        ]),
+                    ]),
+                    "required": .array([.string("layer")]),
+                    "additionalProperties": .bool(false),
+                ]),
+            ]),
+        ]),
+        "default": .array([]),
     ])
 }

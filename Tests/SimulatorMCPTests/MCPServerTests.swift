@@ -109,6 +109,68 @@ import SimulatorStateCore
     #expect(try object(result["structuredContent"])["error"]?.stringValue?.contains("unknown field") == true)
 }
 
+@Test func simulatorComposeAppliesOrderedOverlaysWithoutLiveReads() throws {
+    let controller = MCPStubController()
+    let service = SimulatorToolService(controller: controller)
+    #expect(service.tools.map(\.name).contains("simulator_compose"))
+    #expect(service.tools.map(\.name).contains("simulator_presets"))
+
+    let server = MCPServer(toolHandler: service)
+    let profile: JSONValue = .object([
+        "apiVersion": .string("awesome-ios-sim/v1alpha1"),
+        "kind": .string("SimulatorState"),
+        "metadata": .object(["name": .string("composed")]),
+        "target": .object(["udid": .string("DEVICE")]),
+        "spec": .object(["power": .string("unchanged")]),
+    ])
+    let layer: JSONValue = .object([
+        "apiVersion": .string("awesome-ios-sim/v1alpha1"),
+        "kind": .string("SimulatorStateLayer"),
+        "metadata": .object(["name": .string("boot")]),
+        "spec": .object(["power": .string("booted")]),
+    ])
+    let response = try send(server, method: "tools/call", params: currentParams(merging: [
+        "name": .string("simulator_compose"),
+        "arguments": .object([
+            "profile": profile,
+            "overlays": .array([
+                .object(["preset": .string("shutdown")]),
+                .object(["layer": layer]),
+            ]),
+        ]),
+    ]))
+    let result = try object(response["result"])
+    #expect(result["isError"] == .bool(false))
+    let composed = try object(result["structuredContent"])
+    let spec = try object(composed["spec"])
+    #expect(spec["power"] == .string("booted"))
+}
+
+@Test func simulatorComposeRejectsAmbiguousOverlayEntries() throws {
+    let controller = MCPStubController()
+    let server = MCPServer(toolHandler: SimulatorToolService(controller: controller))
+    let profile: JSONValue = .object([
+        "apiVersion": .string("awesome-ios-sim/v1alpha1"),
+        "kind": .string("SimulatorState"),
+        "metadata": .object(["name": .string("strict")]),
+        "target": .object(["udid": .string("DEVICE")]),
+        "spec": .object([:]),
+    ])
+    let response = try send(server, method: "tools/call", params: currentParams(merging: [
+        "name": .string("simulator_compose"),
+        "arguments": .object([
+            "profile": profile,
+            "overlays": .array([.object([
+                "preset": .string("booted"),
+                "layer": .object([:]),
+            ])]),
+        ]),
+    ]))
+    let result = try object(response["result"])
+    #expect(result["isError"] == .bool(true))
+    #expect(try object(result["structuredContent"])["error"]?.stringValue?.contains("exactly one") == true)
+}
+
 private func currentParams(
     merging values: [String: JSONValue] = [:]
 ) -> [String: JSONValue] {

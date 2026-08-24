@@ -56,11 +56,18 @@ jobs:
         run: swift test --parallel
 
       - name: Validate offline example
-        run: >-
-          swift run ios-sim-state plan
-          --profile Examples/ui-tests.profile.json
-          --snapshot Examples/ui-tests.snapshot.json
-          --compact
+        run: |
+          swift run ios-sim-state compose \
+            --profile Examples/ui-tests.profile.json \
+            --preset clean-status-bar \
+            --layer Examples/ui-tests.layer.json \
+            --compact
+          swift run ios-sim-state plan \
+            --profile Examples/ui-tests.profile.json \
+            --preset clean-status-bar \
+            --layer Examples/ui-tests.layer.json \
+            --snapshot Examples/ui-tests.snapshot.json \
+            --compact
 
       - name: Smoke test MCP discovery
         run: |

@@ -52,6 +52,30 @@ private struct Arguments {
         }
         return value
     }
+
+    func overlays() throws -> [SimulatorStateOverlay] {
+        var result: [SimulatorStateOverlay] = []
+        var index = values.startIndex
+        while index < values.endIndex {
+            let option = values[index]
+            guard option == "--layer" || option == "--preset" else {
+                index = values.index(after: index)
+                continue
+            }
+            let valueIndex = values.index(after: index)
+            guard valueIndex < values.endIndex, !values[valueIndex].hasPrefix("--") else {
+                throw CLIError.usage("\(option) requires a value")
+            }
+            if option == "--preset" {
+                result.append(.preset(values[valueIndex]))
+            } else {
+                let layer = try StateCodec.decodeLayer(from: readData(path: values[valueIndex]))
+                result.append(.layer(layer))
+            }
+            index = values.index(after: valueIndex)
+        }
+        return result
+    }
 }
 
 private let help = """
@@ -60,9 +84,15 @@ awesome-ios-sim — Simulator State as Code
 USAGE
   ios-sim-state inventory
   ios-sim-state snapshot --device <UDID>
-  ios-sim-state diff --profile <profile.json> [--snapshot <snapshot.json> | --device <UDID>]
-  ios-sim-state plan --profile <profile.json> [--snapshot <snapshot.json> | --device <UDID>]
+  ios-sim-state presets
+  ios-sim-state compose --profile <profile.json> [--layer <layer.json> | --preset <name>]...
+  ios-sim-state diff --profile <profile.json> [overlays] [--snapshot <snapshot.json> | --device <UDID>]
+  ios-sim-state plan --profile <profile.json> [overlays] [--snapshot <snapshot.json> | --device <UDID>]
   ios-sim-state apply --plan <plan.json> [--confirm] [--journal <report.json>]
+
+OVERLAYS
+  --layer <file>   Merge a reusable SimulatorStateLayer document.
+  --preset <name>  Merge a built-in preset. Repeat either option; order is preserved.
 
 SAFETY
   `plan` and `diff` never mutate a simulator.
@@ -159,9 +189,20 @@ private func run() throws {
         let udid = try arguments.requiredValue(after: "--device")
         try emit(client.snapshot(udid: udid), pretty: pretty)
 
-    case "diff", "plan":
+    case "presets":
+        try emit(SimulatorStatePresetCatalog.descriptors, pretty: pretty)
+
+    case "compose", "diff", "plan":
         let profilePath = try arguments.requiredValue(after: "--profile")
-        let profile = try StateCodec.decodeProfile(from: readData(path: profilePath))
+        let baseProfile = try StateCodec.decodeProfile(from: readData(path: profilePath))
+        let profile = try SimulatorStateComposer().compose(
+            profile: baseProfile,
+            overlays: arguments.overlays()
+        )
+        if arguments.command == "compose" {
+            try emit(profile, pretty: pretty)
+            return
+        }
         let snapshot = try resolveSnapshot(arguments: arguments, profile: profile, client: client)
         let plan = try StatePlanner().makePlan(profile: profile, current: snapshot)
         if arguments.command == "diff" {

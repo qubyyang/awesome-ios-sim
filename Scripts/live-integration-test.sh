@@ -104,6 +104,9 @@ DEVICE_CREATED=1
 printf '%s\n' "$DEVICE_UDID" > "$ARTIFACT_ROOT/device-udid.txt"
 
 log "Checking live CLI inventory and initial shutdown snapshot"
+"$CLI" presets --compact > "$ARTIFACT_ROOT/presets.json"
+jq -e 'map(.name) == ["booted", "clean-status-bar", "shutdown"]' \
+    "$ARTIFACT_ROOT/presets.json" >/dev/null
 "$CLI" inventory --compact > "$ARTIFACT_ROOT/inventory.json"
 jq -e --arg udid "$DEVICE_UDID" '.devices | any(.udid == $udid and .state == "Shutdown")' \
     "$ARTIFACT_ROOT/inventory.json" >/dev/null
@@ -142,15 +145,63 @@ jq -n \
         metadata: {name: "live-integration-mutation"},
         target: {udid: $udid},
         spec: {
-            power: "booted",
             eraseBeforeApply: true,
-            preferences: [{domain: $domain, key: "marker", value: $marker}],
-            statusBar: {time: "09:41", batteryLevel: 87}
+            preferences: [{domain: $domain, key: "marker", value: $marker}]
         }
     }' > "$ARTIFACT_ROOT/mutation.profile.json"
+jq -n '{
+    apiVersion: "awesome-ios-sim/v1alpha1",
+    kind: "SimulatorStateLayer",
+    metadata: {name: "live-integration-status-bar"},
+    spec: {statusBar: {time: "09:41", batteryLevel: 87}}
+}' > "$ARTIFACT_ROOT/mutation.layer.json"
+
+log "Composing the profile through CLI and MCP without reading simulator state"
+"$CLI" compose \
+    --profile "$ARTIFACT_ROOT/mutation.profile.json" \
+    --preset shutdown \
+    --layer "$ARTIFACT_ROOT/mutation.layer.json" \
+    --preset booted \
+    --compact > "$ARTIFACT_ROOT/mutation.composed.json"
+jq -e '
+    .spec.power == "booted"
+    and .spec.statusBar.time == "09:41"
+    and .spec.statusBar.batteryLevel == 87
+' "$ARTIFACT_ROOT/mutation.composed.json" >/dev/null
+jq -cn \
+    --slurpfile profile "$ARTIFACT_ROOT/mutation.profile.json" \
+    --slurpfile layer "$ARTIFACT_ROOT/mutation.layer.json" '{
+    jsonrpc: "2.0",
+    id: 2,
+    method: "tools/call",
+    params: {
+        name: "simulator_compose",
+        arguments: {
+            profile: $profile[0],
+            overlays: [
+                {preset: "shutdown"},
+                {layer: $layer[0]},
+                {preset: "booted"}
+            ]
+        },
+        _meta: {
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+            "io.modelcontextprotocol/clientInfo": {name: "live-integration", version: "1.0"},
+            "io.modelcontextprotocol/clientCapabilities": {}
+        }
+    }
+}' | "$MCP" > "$ARTIFACT_ROOT/mcp-compose-response.json"
+jq -e '
+    .result.isError == false
+    and .result.structuredContent.spec.power == "booted"
+    and .result.structuredContent.spec.statusBar.batteryLevel == 87
+' "$ARTIFACT_ROOT/mcp-compose-response.json" >/dev/null
 
 "$CLI" plan \
     --profile "$ARTIFACT_ROOT/mutation.profile.json" \
+    --preset shutdown \
+    --layer "$ARTIFACT_ROOT/mutation.layer.json" \
+    --preset booted \
     --device "$DEVICE_UDID" \
     --compact > "$ARTIFACT_ROOT/mutation.plan.json"
 jq -e --arg udid "$DEVICE_UDID" '
@@ -232,7 +283,7 @@ jq -n --arg udid "$DEVICE_UDID" '{
     kind: "SimulatorState",
     metadata: {name: "live-integration-shutdown"},
     target: {udid: $udid},
-    spec: {power: "shutdown"}
+    spec: {}
 }' > "$ARTIFACT_ROOT/shutdown.profile.json"
 jq -cn --arg udid "$DEVICE_UDID" --slurpfile profile "$ARTIFACT_ROOT/shutdown.profile.json" '{
     jsonrpc: "2.0",
@@ -240,7 +291,11 @@ jq -cn --arg udid "$DEVICE_UDID" --slurpfile profile "$ARTIFACT_ROOT/shutdown.pr
     method: "tools/call",
     params: {
         name: "simulator_plan",
-        arguments: {profile: $profile[0], udid: $udid},
+        arguments: {
+            profile: $profile[0],
+            overlays: [{preset: "shutdown"}],
+            udid: $udid
+        },
         _meta: {
             "io.modelcontextprotocol/protocolVersion": "2026-07-28",
             "io.modelcontextprotocol/clientInfo": {name: "live-integration", version: "1.0"},
