@@ -8,6 +8,13 @@ public enum StateCodec {
         return profile
     }
 
+    public static func decodeLayer(from data: Data) throws -> SimulatorStateLayer {
+        try ProfileDocumentValidator.validateLayer(data)
+        let layer = try decoder().decode(SimulatorStateLayer.self, from: data)
+        try layer.validate()
+        return layer
+    }
+
     public static func decodeSnapshot(from data: Data) throws -> SimulatorSnapshot {
         try decoder().decode(SimulatorSnapshot.self, from: data)
     }

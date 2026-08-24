@@ -1,0 +1,26 @@
+{
+  "apiVersion": "awesome-ios-sim/v1alpha1",
+  "kind": "SimulatorStateLayer",
+  "metadata": {
+    "description": "Reusable application defaults for UI-test runs",
+    "name": "ui-test-app"
+  },
+  "spec": {
+    "applications": [
+      {
+        "bundleIdentifier": "com.example.app",
+        "launchArguments": ["--uitesting", "--reset-onboarding"],
+        "presence": "present",
+        "running": true,
+        "sourcePath": "/absolute/path/to/Example.app"
+      }
+    ],
+    "preferences": [
+      {
+        "domain": "com.example.app",
+        "key": "hasSeenOnboarding",
+        "value": false
+      }
+    ]
+  }
+}

@@ -151,6 +151,77 @@ private let device = SimulatorDevice(
     }
 }
 
+@Test func layersComposeInOrderWithStableKeyedCollections() throws {
+    let profile = SimulatorStateProfile(
+        metadata: .init(name: "composed"),
+        target: .init(udid: "DEVICE"),
+        spec: .init(
+            power: .unchanged,
+            applications: [
+                .init(bundleIdentifier: "com.example.z", running: false),
+            ],
+            preferences: [
+                .init(domain: "com.example", key: "mode", value: .string("base")),
+            ],
+            statusBar: ["time": .string("12:00")]
+        )
+    )
+    let layer = SimulatorStateLayer(
+        metadata: .init(name: "ui-test-app"),
+        spec: .init(
+            power: .booted,
+            applications: [
+                .init(bundleIdentifier: "com.example.a", running: true),
+                .init(bundleIdentifier: "com.example.z", presence: .absent),
+            ],
+            preferences: [
+                .init(domain: "com.example", key: "mode", value: .string("layer")),
+                .init(domain: "com.example", key: "onboarding", value: .bool(false)),
+            ],
+            statusBar: ["operatorName": .string("Example")]
+        )
+    )
+
+    let composed = try SimulatorStateComposer().compose(
+        profile: profile,
+        overlays: [.preset("clean-status-bar"), .layer(layer), .preset("shutdown")]
+    )
+
+    #expect(composed.metadata == profile.metadata)
+    #expect(composed.target == profile.target)
+    #expect(composed.spec.power == .shutdown)
+    #expect(composed.spec.applications.map(\.bundleIdentifier) == ["com.example.a", "com.example.z"])
+    #expect(composed.spec.applications[1].presence == .absent)
+    #expect(composed.spec.preferences.map(\.identifier) == [
+        "com.example::mode", "com.example::onboarding",
+    ])
+    #expect(composed.spec.preferences[0].value == .string("layer"))
+    #expect(composed.spec.statusBar?["time"] == .string("09:41"))
+    #expect(composed.spec.statusBar?["operatorName"] == .string("Example"))
+    #expect(composed.spec.statusBar?["batteryLevel"] == .integer(100))
+}
+
+@Test func layerCodecIsStrictAndRequiresManagedState() throws {
+    let valid = #"{"apiVersion":"awesome-ios-sim/v1alpha1","kind":"SimulatorStateLayer","metadata":{"name":"boot"},"spec":{"power":"booted"}}"#
+    let layer = try StateCodec.decodeLayer(from: Data(valid.utf8))
+    #expect(layer.spec.power == .booted)
+
+    let invalidDocuments = [
+        #"{"apiVersion":"awesome-ios-sim/v1alpha1","kind":"SimulatorStateLayer","metadata":{"name":"empty"},"spec":{}}"#,
+        #"{"apiVersion":"awesome-ios-sim/v1alpha1","kind":"SimulatorStateLayer","metadata":{"name":"typo"},"spec":{"powers":"booted"}}"#,
+        #"{"apiVersion":"awesome-ios-sim/v1alpha1","kind":"SimulatorStateLayer","metadata":{"name":"bad"},"target":{"udid":"DEVICE"},"spec":{"power":"booted"}}"#,
+    ]
+    for document in invalidDocuments {
+        #expect(throws: Error.self) { try StateCodec.decodeLayer(from: Data(document.utf8)) }
+    }
+}
+
+@Test func unknownPresetReportsAvailableNames() {
+    #expect(throws: StateCoreError.unknownPreset("missing")) {
+        try SimulatorStatePresetCatalog.layer(named: "missing")
+    }
+}
+
 @Test func plannerProducesDeterministicSafeOrder() throws {
     let current = SimulatorSnapshot(
         generatedAt: "2026-08-18T00:00:00Z",

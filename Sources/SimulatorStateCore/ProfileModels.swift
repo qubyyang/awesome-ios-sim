@@ -256,12 +256,15 @@ public enum StateCoreError: Error, Equatable, LocalizedError, Sendable {
     case unsupportedAPIVersion(String)
     case invalidProfile(String)
     case targetMismatch(String)
+    case unknownPreset(String)
 
     public var errorDescription: String? {
         switch self {
         case let .unsupportedAPIVersion(version): "Unsupported API version: \(version)"
         case let .invalidProfile(message): "Invalid profile: \(message)"
         case let .targetMismatch(message): "Target mismatch: \(message)"
+        case let .unknownPreset(name):
+            "Unknown preset: \(name). Available presets: \(SimulatorStatePresetCatalog.names.joined(separator: ", "))"
         }
     }
 }

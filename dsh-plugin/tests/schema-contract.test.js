@@ -9,9 +9,16 @@ const schema = JSON.parse(
 const example = JSON.parse(
   await readFile(new URL("../../Examples/ui-tests.profile.json", import.meta.url), "utf8"),
 );
+const layerSchema = JSON.parse(
+  await readFile(new URL("../../schemas/v1alpha1/simulator-state-layer.schema.json", import.meta.url), "utf8"),
+);
+const layerExample = JSON.parse(
+  await readFile(new URL("../../Examples/ui-tests.layer.json", import.meta.url), "utf8"),
+);
 
 const ajv = new Ajv2020({ allErrors: true, strict: true });
 const validate = ajv.compile(schema);
+const validateLayer = ajv.compile(layerSchema);
 
 function clone(value) {
   return structuredClone(value);
@@ -19,6 +26,20 @@ function clone(value) {
 
 test("published example satisfies the v1alpha1 JSON Schema", () => {
   assert.equal(validate(example), true, JSON.stringify(validate.errors));
+});
+
+test("published layer example satisfies the v1alpha1 layer schema", () => {
+  assert.equal(validateLayer(layerExample), true, JSON.stringify(validateLayer.errors));
+});
+
+test("layer schema requires reusable state and rejects targets", () => {
+  const empty = clone(layerExample);
+  empty.spec = {};
+  assert.equal(validateLayer(empty), false);
+
+  const targeted = clone(layerExample);
+  targeted.target = { udid: "DEVICE" };
+  assert.equal(validateLayer(targeted), false);
 });
 
 test("schema rejects unknown safety-sensitive fields", () => {

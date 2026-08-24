@@ -17,7 +17,26 @@ enum ProfileDocumentValidator {
         try validateObject(root["metadata"], allowed: ["name", "description"], path: "metadata")
         try validateObject(root["target"], allowed: ["udid", "name", "runtime"], path: "target")
 
-        guard case let .object(spec)? = root["spec"] else { return }
+        try validateSpec(root["spec"])
+    }
+
+    static func validateLayer(_ data: Data) throws {
+        let value = try JSONDecoder().decode(JSONValue.self, from: data)
+        guard case let .object(root) = value else {
+            throw StateCoreError.invalidProfile("document root must be an object")
+        }
+
+        try rejectUnknownKeys(
+            root,
+            allowed: ["apiVersion", "kind", "metadata", "spec"],
+            path: "$"
+        )
+        try validateObject(root["metadata"], allowed: ["name", "description"], path: "metadata")
+        try validateSpec(root["spec"])
+    }
+
+    private static func validateSpec(_ value: JSONValue?) throws {
+        guard case let .object(spec)? = value else { return }
         try rejectUnknownKeys(
             spec,
             allowed: ["power", "eraseBeforeApply", "applications", "preferences", "statusBar"],
