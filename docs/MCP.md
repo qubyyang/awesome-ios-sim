@@ -77,17 +77,40 @@ No arguments. Returns runtimes and devices. Read-only.
 
 Returns the managed snapshot and capability metadata. Read-only.
 
+### `simulator_presets`
+
+No arguments. Returns the stable names and descriptions of all built-in composition presets. Read-only and
+does not access Xcode or a simulator.
+
+### `simulator_compose`
+
+```json
+{
+  "profile": { "apiVersion": "awesome-ios-sim/v1alpha1", "kind": "SimulatorState", "metadata": { "name": "example" }, "target": { "udid": "SIMULATOR-UDID" }, "spec": {} },
+  "overlays": [
+    { "preset": "clean-status-bar" },
+    { "layer": { "apiVersion": "awesome-ios-sim/v1alpha1", "kind": "SimulatorStateLayer", "metadata": { "name": "boot-for-tests" }, "spec": { "power": "booted" } } }
+  ]
+}
+```
+
+Returns a complete profile without reading or mutating a simulator. Overlays are applied from first to last;
+each entry must contain exactly one `preset` or `layer`. Later scalar values win, applications merge by
+`bundleIdentifier`, preferences by `domain` + `key`, and status-bar values by field.
+
 ### `simulator_diff` and `simulator_plan`
 
 ```json
 {
   "profile": { "apiVersion": "awesome-ios-sim/v1alpha1", "kind": "SimulatorState", "metadata": { "name": "example" }, "target": { "udid": "SIMULATOR-UDID" }, "spec": {} },
+  "overlays": [{ "preset": "clean-status-bar" }],
   "udid": "SIMULATOR-UDID"
 }
 ```
 
-`snapshot` is optional. When omitted, the server reads a live simulator selected by explicit `udid` or by the
-profile selector. Ambiguous selectors fail instead of choosing an arbitrary device.
+`overlays` and `snapshot` are optional. Composition uses the same ordered contract as `simulator_compose`.
+When `snapshot` is omitted, the server reads a live simulator selected by explicit `udid` or by the profile
+selector. Ambiguous selectors fail instead of choosing an arbitrary device.
 
 ### `simulator_apply`
 
@@ -105,10 +128,11 @@ mutation. Clients should show the plan and obtain human confirmation before send
 
 1. Call `simulator_inventory`.
 2. Call `simulator_snapshot` for the selected UDID.
-3. Call `simulator_diff` or `simulator_plan` with the desired profile.
-4. Present operations, warnings, and maximum risk to the user.
-5. Call `simulator_apply` without confirmation when a machine-readable dry-run receipt is useful.
-6. Send `confirm: true` only after the user approves the exact plan.
-7. Preserve the returned execution report.
+3. Optionally call `simulator_presets`, then `simulator_compose` to inspect the fully materialized profile.
+4. Call `simulator_diff` or `simulator_plan` with the desired profile and ordered overlays.
+5. Present operations, warnings, and maximum risk to the user.
+6. Call `simulator_apply` without confirmation when a machine-readable dry-run receipt is useful.
+7. Send `confirm: true` only after the user approves the exact plan.
+8. Preserve the returned execution report.
 
 Do not configure a client to inject `confirm: true` automatically.

@@ -110,6 +110,15 @@ Capture one simulator:
 swift run ios-sim-state snapshot --device <UDID> > simulator.snapshot.json
 ```
 
+Compose a target profile from reusable state before planning:
+
+```bash
+swift run ios-sim-state compose \
+  --profile Examples/ui-tests.profile.json \
+  --preset clean-status-bar \
+  --layer Examples/ui-tests.layer.json > simulator.composed.json
+```
+
 Generate an offline plan from the included example:
 
 ```bash
@@ -178,14 +187,32 @@ a booted device is shut down first. Boot operations wait for `simctl bootstatus 
 Profile decoding is strict: unknown fields and empty identifiers are rejected. `statusBar` accepts only the
 public `simctl status_bar` overrides and validates enum values and numeric ranges before planning.
 
+### Reusable layers and presets
+
+A [`SimulatorStateLayer`](schemas/v1alpha1/simulator-state-layer.schema.json) contains only reusable `spec`
+fields and deliberately has no `target`. Apply `--layer <file>` and `--preset <name>` to `compose`, `diff`, or
+`plan`; repeat and interleave these options in the exact order they should be merged. The base profile keeps
+its metadata and target.
+
+Merge behavior is deterministic: later scalar values win; applications replace earlier entries with the same
+`bundleIdentifier`; preferences replace the same `domain` + `key`; status-bar fields merge by key. Application
+and preference arrays are sorted in the composed output. Absence means “no opinion”; use an application with
+`presence: "absent"` when an uninstall is intended. There is no general delete/tombstone operator in
+`v1alpha1`.
+
+Built-in presets are `booted`, `clean-status-bar`, and `shutdown`. Run `ios-sim-state presets` to discover
+their descriptions. [`Examples/ui-tests.layer.json`](Examples/ui-tests.layer.json) is a complete layer example.
+
 ## CLI
 
 | Command | Mutation | Purpose |
 | --- | --- | --- |
 | `inventory` | No | List runtimes and simulators as stable JSON. |
 | `snapshot --device <UDID>` | No | Capture managed state and capability metadata. |
-| `diff --profile <file> [--snapshot <file>]` | No | Show desired/current differences. |
-| `plan --profile <file> [--snapshot <file> \| --device <UDID>]` | No | Produce an ordered operation plan. |
+| `presets` | No | List built-in reusable presets. |
+| `compose --profile <file> [overlays]` | No | Materialize a complete profile from ordered layers and presets. |
+| `diff --profile <file> [overlays] [--snapshot <file>]` | No | Show desired/current differences. |
+| `plan --profile <file> [overlays] [--snapshot <file> \| --device <UDID>]` | No | Produce an ordered operation plan. |
 | `apply --plan <file>` | No | Return a dry-run report. |
 | `apply --plan <file> --confirm` | Yes | Execute the reviewed plan serially. |
 
@@ -205,12 +232,14 @@ Build the MCP executable and point any stdio-capable MCP client at its absolute 
 }
 ```
 
-The server exposes five tools:
+The server exposes seven tools:
 
 | Tool | Behavior |
 | --- | --- |
 | `simulator_inventory` | Read simulator inventory. |
 | `simulator_snapshot` | Capture one simulator. |
+| `simulator_presets` | List built-in reusable presets. |
+| `simulator_compose` | Materialize a complete profile from ordered overlays. |
 | `simulator_diff` | Compare a profile with saved or live state. |
 | `simulator_plan` | Generate a typed, ordered plan. |
 | `simulator_apply` | Dry-run by default; mutates only with `confirm: true`. |
@@ -315,10 +344,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the
 
 ## Roadmap
 
-- Configure the protected Developer ID and App Store Connect release credentials.
-- Add reusable profile layers and presets.
 - Expand capability-aware settings without private frameworks.
 - Build a native SwiftUI companion app on top of the same state engine.
+- Optionally enable Developer ID signing and notarization when protected release credentials are available.
 
 ## License
 

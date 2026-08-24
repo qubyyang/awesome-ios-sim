@@ -8,6 +8,9 @@ initial alpha tag.
 
 ### Added
 
+- Target-independent `SimulatorStateLayer` documents with strict runtime and JSON Schema validation.
+- Ordered profile composition in the CLI and MCP server, plus discoverable `booted`, `clean-status-bar`, and
+  `shutdown` presets.
 - Universal arm64/x86_64 distribution archives assembled from independently built native artifacts.
 - Fail-closed Developer ID signing and Apple `notarytool` automation for tagged releases.
 - Generated Homebrew Formula assets bound to the notarized archive checksum.

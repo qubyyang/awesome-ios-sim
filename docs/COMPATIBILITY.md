@@ -15,8 +15,9 @@ follow these rules:
 - CLI and MCP mutations remain dry-run by default and require explicit confirmation.
 - Best-effort capabilities never become advertised as exact without a readback implementation and tests.
 
-The checked-in JSON Schema and Swift runtime validation are one contract. Both enforce non-empty identifiers,
-known object fields, and the public `simctl status_bar` value ranges. Contract changes must update the schema,
+The checked-in profile and layer JSON Schemas and Swift runtime validation are one contract. Both enforce
+non-empty identifiers, known object fields, and the public `simctl status_bar` value ranges. Ordered overlay
+semantics and built-in preset meanings are also public behavior. Contract changes must update the schemas,
 runtime validation, fixtures, tests, changelog, and both README files together.
 
 Project versions in `Version.swift`, `package.json`, and `package-lock.json` must match. A release tag must match
@@ -33,9 +34,9 @@ that version exactly and have a corresponding changelog section.
 - CLI 与 MCP 的修改操作继续默认 dry-run，只有显式确认才执行。
 - 没有读回实现和测试时，best-effort 能力不会被标记成 exact。
 
-仓库内 JSON Schema 与 Swift Runtime 校验共同组成一份契约：两者都会检查非空标识符、已知字段和公开
-`simctl status_bar` 参数范围。任何契约变更都必须同步更新 Schema、Runtime 校验、Fixture、测试、
-CHANGELOG 与中英文 README。
+仓库内 Profile/Layer JSON Schema 与 Swift Runtime 校验共同组成一份契约：两者都会检查非空标识符、
+已知字段和公开 `simctl status_bar` 参数范围。有序 Overlay 的语义与内置 Preset 的含义也属于公开行为。
+任何契约变更都必须同步更新 Schema、Runtime 校验、Fixture、测试、CHANGELOG 与中英文 README。
 
 `Version.swift`、`package.json` 和 `package-lock.json` 的版本必须一致；Release Tag 必须与版本完全匹配，
 并在 CHANGELOG 中存在对应章节。

@@ -109,6 +109,15 @@ swift run ios-sim-state inventory
 swift run ios-sim-state snapshot --device <UDID> > simulator.snapshot.json
 ```
 
+先用可复用状态合成目标 Profile：
+
+```bash
+swift run ios-sim-state compose \
+  --profile Examples/ui-tests.profile.json \
+  --preset clean-status-bar \
+  --layer Examples/ui-tests.layer.json > simulator.composed.json
+```
+
 使用仓库内的示例离线生成 plan：
 
 ```bash
@@ -175,14 +184,30 @@ boot 后会等待 `simctl bootstatus -b` 完成，再执行依赖操作。
 Profile 使用严格解码：未知字段与空标识符会被拒绝。`statusBar` 只接受公开的 `simctl status_bar`
 覆盖项，并会在生成 Plan 前检查枚举值和数值范围。
 
+### 可复用 Layer 与 Preset
+
+[`SimulatorStateLayer`](schemas/v1alpha1/simulator-state-layer.schema.json) 只包含可复用的 `spec` 字段，
+并且刻意不允许 `target`。`compose`、`diff`、`plan` 都可接受 `--layer <file>` 和 `--preset <name>`；
+两种参数可以重复、交错，并严格按照出现顺序合并。基础 Profile 的 Metadata 与 Target 保持不变。
+
+合并规则是确定性的：标量由后者覆盖；应用按 `bundleIdentifier` 替换同名项；Preference 按
+`domain` + `key` 替换；状态栏按字段合并。合成结果中的应用和 Preference 数组会稳定排序。
+字段缺失表示“不发表意见”；需要卸载应用时使用 `presence: "absent"`。`v1alpha1` 暂不提供通用的
+删除/Tombstone 操作符。
+
+内置 Preset 包括 `booted`、`clean-status-bar` 和 `shutdown`。运行 `ios-sim-state presets` 可查看说明；
+完整 Layer 示例见 [`Examples/ui-tests.layer.json`](Examples/ui-tests.layer.json)。
+
 ## CLI
 
 | 命令 | 是否修改 | 用途 |
 | --- | --- | --- |
 | `inventory` | 否 | 以稳定 JSON 列出 Runtime 和模拟器。 |
 | `snapshot --device <UDID>` | 否 | 采集托管状态与能力元数据。 |
-| `diff --profile <file> [--snapshot <file>]` | 否 | 显示期望状态和当前状态的差异。 |
-| `plan --profile <file> [--snapshot <file> \| --device <UDID>]` | 否 | 生成有序操作计划。 |
+| `presets` | 否 | 列出内置可复用 Preset。 |
+| `compose --profile <file> [overlays]` | 否 | 按顺序合并 Layer 与 Preset，生成完整 Profile。 |
+| `diff --profile <file> [overlays] [--snapshot <file>]` | 否 | 显示期望状态和当前状态的差异。 |
+| `plan --profile <file> [overlays] [--snapshot <file> \| --device <UDID>]` | 否 | 生成有序操作计划。 |
 | `apply --plan <file>` | 否 | 返回 dry-run 报告。 |
 | `apply --plan <file> --confirm` | 是 | 串行执行已审查的 plan。 |
 
@@ -202,12 +227,14 @@ Profile 使用严格解码：未知字段与空标识符会被拒绝。`statusBa
 }
 ```
 
-Server 提供 5 个工具：
+Server 提供 7 个工具：
 
 | 工具 | 行为 |
 | --- | --- |
 | `simulator_inventory` | 读取模拟器清单。 |
 | `simulator_snapshot` | 采集单个模拟器。 |
+| `simulator_presets` | 列出内置可复用 Preset。 |
+| `simulator_compose` | 按顺序合并 Overlay，生成完整 Profile。 |
 | `simulator_diff` | 比较 profile 与实时或已保存状态。 |
 | `simulator_plan` | 生成类型化、有序 plan。 |
 | `simulator_apply` | 默认 dry-run；只有 `confirm: true` 才会修改。 |
@@ -307,10 +334,9 @@ x86_64 Slice，合并并验证 Universal 压缩包，然后强制执行 Develope
 
 ## 路线图
 
-- 配置受保护的 Developer ID 与 App Store Connect 发布凭据。
-- 支持可复用的 Profile Layer 和 Preset。
 - 在不依赖私有框架的前提下扩展能力感知设置。
 - 基于同一状态引擎构建原生 SwiftUI 配套应用。
+- 在具备受保护的发布凭据后，可选启用 Developer ID 签名与 Apple 公证。
 
 ## 许可证
 

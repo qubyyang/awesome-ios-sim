@@ -65,12 +65,14 @@ Harness 会给 MCP 工具名加上 Server Namespace。使用默认的 `ios_sim` 
 | --- | --- |
 | `mcp__ios_sim__simulator_inventory` | 列出可用 Runtime 与模拟器。 |
 | `mcp__ios_sim__simulator_snapshot` | 采集单个模拟器的托管状态。 |
+| `mcp__ios_sim__simulator_presets` | 列出内置可复用状态 Preset。 |
+| `mcp__ios_sim__simulator_compose` | 按顺序合并 Overlay，生成完整 Profile。 |
 | `mcp__ios_sim__simulator_diff` | 比较 Profile 与保存或实时状态。 |
 | `mcp__ios_sim__simulator_plan` | 生成有序、可审查的 Plan。 |
 | `mcp__ios_sim__simulator_apply` | 默认 Dry-run；仅 `confirm: true` 时修改。 |
 
-推荐的安全工作流是 inventory → snapshot → diff → plan → 人工审查 → apply。执行前不要让 Agent
-手工拼装或改写 Plan 对象。
+推荐的安全工作流是 inventory → snapshot → compose → diff → plan → 人工审查 → apply；不需要 Overlay
+时可以省略 compose。执行前不要让 Agent 手工拼装或改写 Plan 对象。
 
 ## 启动配置
 
@@ -137,4 +139,3 @@ DSH 的 stdio MCP Bridge 会把配置的命令作为宿主子进程启动。和�
 
 这不会削弱模拟器修改门禁：除非 `simulator_apply` 的 `confirm` 参数严格等于 `true`，否则仍然
 只会返回 Dry-run。DSH 部署不应自动确认来自不可信 Profile、Plan 文件或对话内容的执行计划。
-

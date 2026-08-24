@@ -66,12 +66,14 @@ namespace, the agent receives:
 | --- | --- |
 | `mcp__ios_sim__simulator_inventory` | List available runtimes and simulators. |
 | `mcp__ios_sim__simulator_snapshot` | Capture the managed state of one simulator. |
+| `mcp__ios_sim__simulator_presets` | List built-in reusable state presets. |
+| `mcp__ios_sim__simulator_compose` | Compose a complete profile from ordered overlays. |
 | `mcp__ios_sim__simulator_diff` | Compare a profile with saved or live state. |
 | `mcp__ios_sim__simulator_plan` | Generate an ordered, reviewable plan. |
 | `mcp__ios_sim__simulator_apply` | Dry-run by default; mutate only with `confirm: true`. |
 
-A safe agent workflow is inventory → snapshot → diff → plan → review → apply. Plan objects should not be
-reconstructed manually before apply.
+A safe agent workflow is inventory → snapshot → compose → diff → plan → review → apply. `compose` is optional
+when no overlays are needed. Plan objects should not be reconstructed manually before apply.
 
 ## Startup configuration
 
@@ -139,4 +141,3 @@ only revisions you trust and pin a tag or commit for managed deployments.
 This does not weaken the simulator mutation boundary: `simulator_apply` still produces a dry-run unless
 its `confirm` argument is exactly `true`. A DSH deployment should not automatically confirm plans from an
 untrusted profile, plan file, or conversation.
-

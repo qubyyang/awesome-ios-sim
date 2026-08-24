@@ -9,7 +9,7 @@ usable in tests and CI without a simulator runtime. The host layer must be narro
 
 | Module | Responsibility | Host dependency |
 | --- | --- | --- |
-| `SimulatorStateCore` | Profile/snapshot models, capability metadata, validation, diff, deterministic planning | Foundation only |
+| `SimulatorStateCore` | Profile/layer/snapshot models, composition, presets, validation, diff, deterministic planning | Foundation only |
 | `SimctlDriver` | Process execution, `simctl` parsing, operation mapping, serialized apply reports | Xcode for live operations |
 | `SimulatorCLI` | File-oriented human and CI interface | Driver for live operations |
 | `SimulatorMCP` | MCP stdio framing, protocol compatibility, JSON Schema tools | Driver for live operations |
@@ -18,13 +18,15 @@ usable in tests and CI without a simulator runtime. The host layer must be narro
 
 Planning uses a projected power state rather than treating boot and shutdown as independent commands:
 
-1. Validate the profile schema and target selector.
-2. Determine original and requested final power state.
-3. Shut down first when erase is requested on a booted device.
-4. Erase, if requested.
-5. Boot when an online operation needs the simulator.
-6. Reconcile apps, preferences, and status bar overrides in stable order.
-7. Restore the requested or original final power state.
+1. Validate the base profile, every target-independent layer, and each preset name.
+2. Compose ordered overlays into one complete profile using keyed, deterministic merge rules.
+3. Validate the composed profile and target selector.
+4. Determine original and requested final power state.
+5. Shut down first when erase is requested on a booted device.
+6. Erase, if requested.
+7. Boot when an online operation needs the simulator.
+8. Reconcile apps, preferences, and status bar overrides in stable order.
+9. Restore the requested or original final power state.
 
 Operation IDs are derived from their final order. Diff entries and warning lists are sorted separately so
 serialized output remains stable across runs with the same inputs.
@@ -55,7 +57,7 @@ No private CoreSimulator framework is used to turn a best-effort capability into
 
 ## Trust boundaries
 
-- Profiles, snapshots, and plans are untrusted input and decoded into narrow types.
+- Profiles, layers, snapshots, and plans are untrusted input and decoded into narrow types.
 - A plan is executable intent; CLI and MCP validate that every operation targets `plan.targetUDID` and that
   operation IDs are unique.
 - Mutation requires confirmation at the apply boundary, independent of per-operation annotations.
@@ -68,4 +70,3 @@ No private CoreSimulator framework is used to turn a best-effort capability into
 - Streamable HTTP transport and its authorization model.
 - Direct filesystem indexing and orphan-directory cleanup.
 - Native SwiftUI presentation.
-
