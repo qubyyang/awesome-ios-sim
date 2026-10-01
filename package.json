@@ -37,7 +37,7 @@
     "darwin"
   ],
   "dependencies": {
-    "@deepseek-ai/schemastery": "^3.18.1"
+    "@deepseek-ai/schemastery": "^3.18.4"
   },
   "devDependencies": {
     "ajv": "^8.17.1"
